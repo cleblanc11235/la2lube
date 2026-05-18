@@ -44,8 +44,8 @@
   --border: var(--ctp-surface1);
   --text: var(--ctp-text);
   --muted: var(--ctp-subtext0);
-  --amber: var(--ctp-peach);
-  --amber-hover: #fcbc94;
+  --amber: var(--ctp-lavender);
+  --amber-hover: #c7d0ff;
   --text-on-accent: var(--ctp-crust);
   --blue: var(--ctp-blue);
   --green: var(--ctp-green);
@@ -77,7 +77,7 @@ body {
   background-image:
     radial-gradient(ellipse 100% 80% at 50% -15%, rgba(203, 166, 247, 0.09), transparent 55%),
     radial-gradient(ellipse 70% 50% at 100% 50%, rgba(137, 180, 250, 0.05), transparent 45%),
-    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(250, 179, 135, 0.06), transparent 50%);
+    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(180, 190, 254, 0.06), transparent 50%);
   background-attachment: fixed;
 }
 
