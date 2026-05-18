@@ -374,7 +374,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
   },
   methodTabActive: {
-    backgroundColor: 'rgba(250, 179, 135, 0.14)',
+    backgroundColor: 'var(--accent-bg-medium)',
     borderColor: 'var(--amber)',
     color: 'var(--amber)',
   },

@@ -148,7 +148,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.875rem',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
-    color: 'var(--muted)',
+    color: 'var(--mauve)',
     marginBottom: '8px',
   },
   statValue: {

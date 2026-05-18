@@ -262,7 +262,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '0 auto',
   },
   recBanner: {
-    backgroundColor: 'rgba(250, 179, 135, 0.1)',
+    backgroundColor: 'var(--accent-bg-soft)',
     border: '1px solid var(--amber)',
     borderRadius: '8px',
     padding: '12px 16px',
@@ -299,7 +299,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
-    color: 'var(--muted)',
+    color: 'var(--mauve)',
     borderBottom: '1px solid var(--border)',
     paddingBottom: '12px',
     marginBottom: '16px',
@@ -324,7 +324,7 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'left',
   },
   serviceButtonSelected: {
-    backgroundColor: 'rgba(250, 179, 135, 0.15)',
+    backgroundColor: 'var(--accent-bg-strong)',
     borderColor: 'var(--amber)',
   },
   serviceName: {
@@ -379,7 +379,7 @@ const styles: Record<string, React.CSSProperties> = {
   mileageInfo: {
     fontSize: '14px',
     fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-    color: 'var(--muted)',
+    color: 'var(--teal)',
   },
   emptyState: {
     padding: '32px 0',

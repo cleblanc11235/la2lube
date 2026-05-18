@@ -8,7 +8,7 @@
   --pl-border: #45475a;
   --pl-text: #cdd6f4;
   --pl-muted: #a6adc8;
-  --pl-gold: #b4befe;
+  --pl-gold: #fab387;
   --pl-gold-dim: #cdd6f4;
   --pl-green: rgba(166, 227, 161, 0.12);
   --pl-green-border: rgba(166, 227, 161, 0.35);
@@ -18,8 +18,8 @@
   min-height: 100%;
   background-color: var(--pl-bg);
   background-image:
-    radial-gradient(ellipse 120% 70% at 50% -10%, rgba(203, 166, 247, 0.1), transparent 52%),
-    radial-gradient(ellipse 90% 50% at 100% 30%, rgba(137, 180, 250, 0.06), transparent 48%),
+    radial-gradient(ellipse 120% 70% at 50% -10%, rgba(250, 179, 135, 0.08), transparent 52%),
+    radial-gradient(ellipse 90% 50% at 100% 30%, rgba(242, 205, 205, 0.05), transparent 48%),
     linear-gradient(180deg, #181825 0%, #1e1e2e 35%, #1e1e2e 100%);
   background-attachment: fixed;
   color: var(--pl-text);

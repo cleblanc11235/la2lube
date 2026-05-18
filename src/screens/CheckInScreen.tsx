@@ -581,7 +581,7 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitle: {
     fontSize: '20px',
     fontWeight: 600,
-    color: 'var(--text)',
+    color: 'var(--mauve)',
     marginTop: '32px',
     marginBottom: '16px',
   },
@@ -669,7 +669,7 @@ const styles: Record<string, React.CSSProperties> = {
   historyCardMileage: {
     fontSize: '16px',
     fontWeight: 600,
-    color: 'var(--amber)',
+    color: 'var(--teal)',
     fontFamily: 'Consolas, Monaco, "Courier New", monospace',
   },
   historyCardServices: {
@@ -706,7 +706,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '16px',
   },
   recBanner: {
-    backgroundColor: 'rgba(250, 179, 135, 0.1)',
+    backgroundColor: 'var(--accent-bg-soft)',
     border: '1px solid var(--amber)',
     borderLeft: '4px solid var(--amber)',
     borderRadius: '8px',
