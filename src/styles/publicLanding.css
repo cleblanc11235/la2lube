@@ -1,0 +1,320 @@
+/* Public marketing site — Catppuccin Mocha + editorial display (Fraunces) */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,600&display=swap');
+
+.public-landing {
+  --pl-bg: #1e1e2e;
+  --pl-mantle: #181825;
+  --pl-surface: #313244;
+  --pl-border: #45475a;
+  --pl-text: #cdd6f4;
+  --pl-muted: #a6adc8;
+  --pl-gold: #fab387;
+  --pl-gold-dim: #f9e2af;
+  --pl-green: rgba(166, 227, 161, 0.12);
+  --pl-green-border: rgba(166, 227, 161, 0.35);
+  --pl-radius: 12px;
+  --pl-font-display: 'Fraunces', Georgia, serif;
+  --pl-font-body: 'DM Sans', system-ui, sans-serif;
+  min-height: 100%;
+  background-color: var(--pl-bg);
+  background-image:
+    radial-gradient(ellipse 120% 70% at 50% -10%, rgba(203, 166, 247, 0.1), transparent 52%),
+    radial-gradient(ellipse 90% 50% at 100% 30%, rgba(137, 180, 250, 0.06), transparent 48%),
+    linear-gradient(180deg, #181825 0%, #1e1e2e 35%, #1e1e2e 100%);
+  background-attachment: fixed;
+  color: var(--pl-text);
+  font-family: var(--pl-font-body);
+  line-height: 1.5;
+}
+
+.public-landing a {
+  color: var(--pl-gold);
+}
+
+.public-landing .mono-money {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.pl-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px 120px;
+}
+
+.pl-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--pl-border);
+  background: rgba(24, 24, 37, 0.92);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.pl-logo {
+  font-family: var(--pl-font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--pl-gold);
+}
+
+.pl-hero {
+  padding: 48px 0 40px;
+  text-align: center;
+}
+
+.pl-hero h1 {
+  font-family: var(--pl-font-display);
+  font-size: clamp(1.75rem, 5vw, 2.35rem);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  max-width: 36ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pl-hero-sub {
+  color: var(--pl-muted);
+  font-size: 1.05rem;
+  max-width: 42ch;
+  margin: 0 auto 28px;
+}
+
+.pl-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.pl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pl-btn-primary {
+  background: var(--pl-gold);
+  color: #11111b;
+}
+
+.pl-btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.pl-btn-primary:focus-visible {
+  outline: 2px solid var(--pl-gold);
+  outline-offset: 3px;
+}
+
+.pl-btn-secondary {
+  background: transparent;
+  color: var(--pl-text);
+  border: 1px solid var(--pl-border);
+}
+
+.pl-btn-secondary:hover {
+  border-color: var(--pl-gold);
+}
+
+.pl-btn-secondary:focus-visible {
+  outline: 2px solid var(--pl-gold);
+  outline-offset: 3px;
+}
+
+.pl-badge {
+  display: inline-block;
+  background: var(--pl-surface);
+  border: 1px solid var(--pl-border);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  color: var(--pl-muted);
+}
+
+.pl-section {
+  padding: 36px 0;
+  border-top: 1px solid var(--pl-border);
+}
+
+.pl-section h2 {
+  font-family: var(--pl-font-display);
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: var(--pl-text);
+}
+
+.pl-section-lead {
+  color: var(--pl-muted);
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+}
+
+.pl-card {
+  background: var(--pl-surface);
+  border: 1px solid var(--pl-border);
+  border-radius: var(--pl-radius);
+  padding: 20px;
+}
+
+.pl-pricing-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pl-pricing-table th,
+.pl-pricing-table td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--pl-border);
+}
+
+.pl-pricing-table th {
+  color: var(--pl-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pl-pricing-table td:last-child,
+.pl-pricing-table th:last-child {
+  text-align: right;
+}
+
+.pl-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pl-checklist li {
+  padding: 10px 0 10px 32px;
+  position: relative;
+  border-bottom: 1px solid var(--pl-border);
+}
+
+.pl-checklist li:last-child {
+  border-bottom: none;
+}
+
+.pl-checklist li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--pl-gold);
+  font-weight: 700;
+}
+
+.pl-footer {
+  padding: 32px 20px 48px;
+  color: var(--pl-muted);
+  font-size: 0.875rem;
+  text-align: center;
+  border-top: 1px solid var(--pl-border);
+}
+
+.pl-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.pl-sticky-cta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: rgba(24, 24, 37, 0.94);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--pl-border);
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  z-index: 40;
+}
+
+.pl-sticky-cta .pl-btn {
+  flex: 1;
+  max-width: 200px;
+  min-height: 52px;
+  font-size: 0.95rem;
+}
+
+@media (min-width: 768px) {
+  .pl-sticky-cta {
+    display: none;
+  }
+}
+
+.pl-nap-block {
+  font-size: 0.95rem;
+  color: var(--pl-muted);
+  margin-top: 20px;
+}
+
+.pl-review-card {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--pl-green);
+  border-radius: var(--pl-radius);
+  border: 1px solid var(--pl-green-border);
+}
+
+.pl-micro {
+  font-size: 0.8rem;
+  color: var(--pl-muted);
+  margin-top: 12px;
+}
+
+.pl-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--pl-gold);
+  color: var(--text-on-accent);
+  font-weight: 700;
+  border-radius: 0 0 8px 0;
+  text-decoration: none;
+}
+
+.pl-skip-link:focus {
+  left: 0;
+}
+
+@media (max-width: 640px) {
+  .pl-hero {
+    padding: 32px 0 28px;
+  }
+
+  .pl-nap-block {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .pl-footer-links {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
