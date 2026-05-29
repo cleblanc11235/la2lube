@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import type { AppScreen, Customer, Vehicle, Service, Bay, Transaction } from '../types';
 import type { Recommendation } from '../data/recommendations';
 import { mockCustomers, serviceMenu, mockBays } from '../data/mockData';
@@ -98,21 +98,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [transactions, setTransactions] = useState<Transaction[]>(getInitialTransactions());
   const [tempCustomers, setTempCustomers] = useState<Customer[]>([]);
 
-  const setTicket = (partial: Partial<Ticket>) => {
+  const setTicket = useCallback((partial: Partial<Ticket>) => {
     setTicketState((prev) => ({ ...prev, ...partial }));
-  };
+  }, []);
 
-  const resetTicket = () => {
+  const resetTicket = useCallback(() => {
     setTicketState(initialTicket);
-  };
+  }, []);
 
-  const addTransaction = (t: Transaction) => {
+  const addTransaction = useCallback((t: Transaction) => {
     setTransactions((prev) => [...prev, t]);
-  };
+  }, []);
 
-  const setScreen = (s: AppScreen) => {
+  const setScreen = useCallback((s: AppScreen) => {
     setActiveScreen(s);
-  };
+  }, []);
 
   // Derived stats
   const totalRevenue = useMemo(
@@ -122,19 +122,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const carCount = useMemo(() => transactions.length, [transactions]);
 
-  const addTempCustomer = (c: Customer) => {
+  const addTempCustomer = useCallback((c: Customer) => {
     setTempCustomers((prev) => [...prev, c]);
-  };
+  }, []);
 
   // Lookup helpers
-  const getCustomerById = (id: string): Customer | undefined => {
+  const getCustomerById = useCallback((id: string): Customer | undefined => {
     return mockCustomers.find((c) => c.id === id) ?? tempCustomers.find((c) => c.id === id);
-  };
+  }, [tempCustomers]);
 
-  const getVehicleById = (customerId: string, vehicleId: string): Vehicle | undefined => {
+  const getVehicleById = useCallback((customerId: string, vehicleId: string): Vehicle | undefined => {
     const customer = getCustomerById(customerId);
     return customer?.vehicles.find((v) => v.id === vehicleId);
-  };
+  }, [getCustomerById]);
 
   const value: AppState = {
     activeScreen,

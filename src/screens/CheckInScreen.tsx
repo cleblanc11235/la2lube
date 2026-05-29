@@ -383,30 +383,43 @@ export default function CheckInScreen() {
         {hasHistory && (
           <>
             <h3 style={styles.sectionTitle}>Service History</h3>
-            <div style={styles.historyList}>
+            <div style={styles.historyTimeline}>
               {sortedHistory.map((record, index) => (
-                <div key={index} style={styles.historyCard}>
-                  <div style={styles.historyCardHeader}>
-                    <span style={styles.historyCardDate}>
-                      {new Date(record.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </span>
-                    <span style={styles.historyCardMileage}>
-                      {record.mileage.toLocaleString()} mi
-                    </span>
+                <div key={index} style={styles.timelineEntry}>
+                  <div style={styles.timelineRail}>
+                    <div style={styles.timelineDot}></div>
+                    {index < sortedHistory.length - 1 && (
+                      <div style={styles.timelineLine}></div>
+                    )}
                   </div>
-                  <div style={styles.historyCardServices}>
-                    {record.services.map((service, idx) => (
-                      <div key={idx} style={styles.historyService}>
-                        • {service}
+                  <div style={styles.timelineCard}>
+                    <div style={styles.timelineCardHeader}>
+                      <span style={styles.timelineCardDate}>
+                        {new Date(record.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                      <div style={styles.timelineCardMileageRow}>
+                        <span style={styles.timelineCardMileage}>
+                          {record.mileage.toLocaleString()} mi
+                        </span>
+                        {record.mileage >= 80000 && (
+                          <span style={styles.highMiBadge}>HIGH MI</span>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                  <div style={styles.historyCardTotal}>
-                    Total: ${record.total.toFixed(2)}
+                    </div>
+                    <div style={styles.timelineCardServices}>
+                      {record.services.map((service, idx) => (
+                        <div key={idx} style={styles.servicePill}>
+                          {service}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={styles.timelineCardTotal}>
+                      Total: ${record.total.toFixed(2)}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -644,48 +657,92 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--amber)',
     fontFamily: 'Consolas, Monaco, "Courier New", monospace',
   },
-  historyList: {
+  historyTimeline: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
   },
-  historyCard: {
+  timelineEntry: {
+    display: 'flex',
+    gap: '20px',
+  },
+  timelineRail: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  timelineDot: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    backgroundColor: 'var(--amber)',
+    flexShrink: 0,
+    marginTop: '6px',
+  },
+  timelineLine: {
+    width: '2px',
+    flexGrow: 1,
+    backgroundColor: 'var(--border)',
+    minHeight: '40px',
+  },
+  timelineCard: {
+    flex: 1,
     backgroundColor: 'var(--surface)',
     border: '1px solid var(--border)',
     borderRadius: '12px',
     padding: '20px',
+    marginBottom: '20px',
   },
-  historyCardHeader: {
+  timelineCardHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '12px',
   },
-  historyCardDate: {
-    fontSize: '16px',
-    fontWeight: 600,
+  timelineCardDate: {
+    fontSize: '15px',
+    fontWeight: 700,
     color: 'var(--text)',
   },
-  historyCardMileage: {
-    fontSize: '16px',
+  timelineCardMileageRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  timelineCardMileage: {
+    fontSize: '15px',
     fontWeight: 600,
-    color: 'var(--teal)',
+    color: 'var(--amber)',
     fontFamily: 'Consolas, Monaco, "Courier New", monospace',
   },
-  historyCardServices: {
+  highMiBadge: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: 'var(--amber)',
+    backgroundColor: 'var(--accent-bg-soft)',
+    border: '1px solid var(--amber)',
+    borderRadius: '4px',
+    padding: '2px 6px',
+    letterSpacing: '0.5px',
+  },
+  timelineCardServices: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
+    flexWrap: 'wrap',
+    gap: '8px',
     marginBottom: '12px',
   },
-  historyService: {
-    fontSize: '14px',
+  servicePill: {
+    fontSize: '12px',
     color: 'var(--text)',
+    backgroundColor: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '6px',
+    padding: '4px 10px',
   },
-  historyCardTotal: {
-    fontSize: '16px',
+  timelineCardTotal: {
+    fontSize: '13px',
     fontWeight: 600,
-    color: 'var(--text)',
+    color: 'var(--muted)',
     fontFamily: 'Consolas, Monaco, "Courier New", monospace',
     textAlign: 'right',
   },

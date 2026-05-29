@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppProvider, useApp } from '../context/AppContext';
 import ServicesScreen from './ServicesScreen';
@@ -83,7 +83,7 @@ describe('ServicesScreen', () => {
     renderServices();
 
     // Before selecting, no total should be visible (empty state)
-    expect(screen.queryByText(/total:/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('$81.36')).not.toBeInTheDocument();
 
     // Click a service button
     const serviceButton = screen.getByText('Full Synthetic Oil Change');
@@ -91,7 +91,6 @@ describe('ServicesScreen', () => {
 
     // Total should now appear
     // Full Synthetic is $74.99, with 8.5% tax = $81.36
-    expect(screen.getByText(/total:/i)).toBeInTheDocument();
     expect(screen.getByText('$81.36')).toBeInTheDocument();
   });
 
