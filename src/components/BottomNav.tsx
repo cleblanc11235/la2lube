@@ -14,21 +14,27 @@ const navItems: Array<{ id: AppScreen; label: string }> = [
 ];
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }) => {
+  const [hoveredTab, setHoveredTab] = React.useState<AppScreen | null>(null);
+
   return (
     <nav style={styles.nav}>
       {navItems.map((item) => {
         const isActive = activeScreen === item.id;
+        const isHovered = hoveredTab === item.id;
         return (
           <button
             key={item.id}
             style={{
               ...styles.navButton,
               ...(isActive ? styles.navButtonActive : {}),
+              ...(isHovered && !isActive ? styles.navButtonHover : {}),
             }}
             onClick={() => onNavigate(item.id)}
+            onMouseEnter={() => setHoveredTab(item.id)}
+            onMouseLeave={() => setHoveredTab(null)}
           >
-            {isActive && <div style={styles.activeIndicator} />}
             <span>{item.label}</span>
+            {isActive && <div style={styles.activeIndicator} />}
           </button>
         );
       })}
@@ -61,18 +67,20 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    transition: 'color 0.2s',
+    transition: 'color 0.2s, background 0.2s',
     fontFamily: 'inherit',
   },
   navButtonActive: {
     color: 'var(--amber)',
   },
+  navButtonHover: {
+    background: 'rgba(205, 214, 244, 0.06)',
+  },
   activeIndicator: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    width: '24px',
     height: '3px',
     background: 'var(--amber)',
+    borderRadius: '2px',
+    margin: '2px auto 0',
   },
 };

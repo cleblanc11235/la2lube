@@ -150,6 +150,11 @@ body {
   background: rgba(205, 214, 244, 0.1);
 }
 
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
 /* Services Screen Responsive Layout */
 @media (max-width: 1024px) {
   .services-layout {

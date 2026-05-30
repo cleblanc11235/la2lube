@@ -255,7 +255,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border)',
     borderRadius: '12px',
     padding: '32px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    boxShadow: 'var(--shadow-card)',
   },
   invoiceHeader: {
     marginBottom: '20px',
@@ -371,7 +371,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border)',
     borderRadius: '8px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'border-color 0.2s, background 0.2s, color 0.2s',
   },
   methodTabActive: {
     backgroundColor: 'var(--accent-bg-medium)',

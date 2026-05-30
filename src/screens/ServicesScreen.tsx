@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Service } from '../types';
 
 export default function ServicesScreen() {
   const { ticket, setTicket, setScreen, services, getCustomerById, getVehicleById } = useApp();
+
+  // Hover state for service buttons
+  const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
 
   // Get customer and vehicle info
   const customer = ticket.customerId ? getCustomerById(ticket.customerId) : null;
@@ -110,7 +113,10 @@ export default function ServicesScreen() {
                   key={service.id}
                   service={service}
                   isSelected={isServiceSelected(service.id)}
+                  isHovered={hoveredServiceId === service.id}
                   onClick={() => toggleService(service)}
+                  onMouseEnter={() => setHoveredServiceId(service.id)}
+                  onMouseLeave={() => setHoveredServiceId(null)}
                 />
               ))}
             </div>
@@ -125,7 +131,10 @@ export default function ServicesScreen() {
                   key={service.id}
                   service={service}
                   isSelected={isServiceSelected(service.id)}
+                  isHovered={hoveredServiceId === service.id}
                   onClick={() => toggleService(service)}
+                  onMouseEnter={() => setHoveredServiceId(service.id)}
+                  onMouseLeave={() => setHoveredServiceId(null)}
                 />
               ))}
             </div>
@@ -140,7 +149,10 @@ export default function ServicesScreen() {
                   key={service.id}
                   service={service}
                   isSelected={isServiceSelected(service.id)}
+                  isHovered={hoveredServiceId === service.id}
                   onClick={() => toggleService(service)}
+                  onMouseEnter={() => setHoveredServiceId(service.id)}
+                  onMouseLeave={() => setHoveredServiceId(null)}
                 />
               ))}
             </div>
@@ -169,7 +181,10 @@ export default function ServicesScreen() {
 
             {/* Line items */}
             {ticket.selectedServices.length === 0 ? (
-              <div style={styles.emptyState}>No services selected</div>
+              <div style={styles.emptyState}>
+                <div style={{ fontSize: '2rem', marginBottom: '8px', opacity: 0.4 }}>🔧</div>
+                <div style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>No services selected</div>
+              </div>
             ) : (
               <>
                 <div style={styles.lineItems}>
@@ -232,10 +247,13 @@ export default function ServicesScreen() {
 interface ServiceButtonProps {
   service: Service;
   isSelected: boolean;
+  isHovered: boolean;
   onClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 }
 
-function ServiceButton({ service, isSelected, onClick }: ServiceButtonProps) {
+function ServiceButton({ service, isSelected, isHovered, onClick, onMouseEnter, onMouseLeave }: ServiceButtonProps) {
   const isFree = service.price === 0;
 
   return (
@@ -243,8 +261,11 @@ function ServiceButton({ service, isSelected, onClick }: ServiceButtonProps) {
       style={{
         ...styles.serviceButton,
         ...(isSelected ? styles.serviceButtonSelected : {}),
+        ...(isHovered && !isSelected ? styles.serviceButtonHover : {}),
       }}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <div style={isSelected ? styles.serviceNameSelected : styles.serviceName}>
         {service.name}
@@ -323,9 +344,15 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     textAlign: 'left',
   },
+  serviceButtonHover: {
+    transform: 'translateY(-1px)',
+    boxShadow: '0 4px 16px rgba(17, 17, 27, 0.5)',
+    borderColor: 'var(--ctp-overlay0)',
+  },
   serviceButtonSelected: {
     backgroundColor: 'var(--accent-bg-strong)',
     borderColor: 'var(--amber)',
+    boxShadow: '0 0 16px var(--accent-glow), 0 2px 8px rgba(17, 17, 27, 0.4)',
   },
   serviceName: {
     fontSize: '16px',
@@ -382,10 +409,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--teal)',
   },
   emptyState: {
-    padding: '32px 0',
     textAlign: 'center',
-    color: 'var(--muted)',
-    fontSize: '14px',
+    padding: '32px 16px',
   },
   lineItems: {
     display: 'flex',

@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { SHOP } from '../config/shopBrand';
 
 const DoneScreen: React.FC = () => {
   const { ticket, transactions, resetTicket, setScreen } = useApp();
   const [showReprintFlash, setShowReprintFlash] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
+
+  // Trigger pulse animation on "Next Customer" button after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowPulse(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Get the most recent transaction (the one we just completed)
   const lastTransaction = transactions[transactions.length - 1];
@@ -94,6 +104,29 @@ const DoneScreen: React.FC = () => {
 
   return (
     <div style={styles.container}>
+      {/* Inject CSS keyframes for animations */}
+      <style>
+        {`
+          @keyframes checkmark-pop {
+            0%   { opacity: 0; transform: scale(0.3); }
+            60%  { opacity: 1; transform: scale(1.15); }
+            80%  { transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes slide-up-fade {
+            0%   { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes heading-fade {
+            0%   { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes amber-pulse-btn {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(250, 179, 135, 0); }
+            50%       { box-shadow: 0 0 0 8px rgba(250, 179, 135, 0.25); }
+          }
+        `}
+      </style>
       <div style={styles.wrapper}>
         {/* Section 1: Confirmation */}
         <div style={styles.confirmationSection}>
@@ -160,7 +193,10 @@ const DoneScreen: React.FC = () => {
             {showReprintFlash ? 'Printed!' : 'Reprint Sticker'}
           </button>
           <button
-            style={styles.nextButton}
+            style={{
+              ...styles.nextButton,
+              animation: showPulse ? 'amber-pulse-btn 1.2s ease-in-out infinite' : undefined,
+            }}
             onClick={handleNextCustomer}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--amber-hover)';
@@ -209,7 +245,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  },
+    animation: 'checkmark-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+  } as React.CSSProperties,
   checkmark: {
     fontSize: '48px',
     fontWeight: 'bold',
@@ -220,19 +257,25 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: 'var(--text)',
     margin: 0,
-  },
+    opacity: 0,
+    animation: 'heading-fade 0.4s ease-out 0.35s both forwards',
+  } as React.CSSProperties,
   paymentInfo: {
     fontSize: '1.125rem',
     color: 'var(--muted)',
     fontFamily: 'Consolas, Monaco, "Courier New", monospace',
     margin: 0,
-  },
+    opacity: 0,
+    animation: 'slide-up-fade 0.4s ease-out 0.75s both forwards',
+  } as React.CSSProperties,
 
   // Section 2: Sticker
   stickerSection: {
     display: 'flex',
     justifyContent: 'center',
-  },
+    opacity: 0,
+    animation: 'slide-up-fade 0.5s ease-out 0.55s both forwards',
+  } as React.CSSProperties,
   sticker: {
     backgroundColor: '#ffffff',
     border: '2px solid #333333',
@@ -303,7 +346,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     gap: '16px',
     width: '100%',
-  },
+    opacity: 0,
+    animation: 'slide-up-fade 0.4s ease-out 0.75s both forwards',
+  } as React.CSSProperties,
   reprintButton: {
     flex: 1,
     minHeight: '60px',

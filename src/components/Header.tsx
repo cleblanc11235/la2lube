@@ -7,6 +7,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ revenue, carCount }) => {
+  const [hoveredChip, setHoveredChip] = React.useState<'revenue' | 'cars' | null>(null);
+
   return (
     <header style={styles.header}>
       <div style={styles.left}>
@@ -14,13 +16,27 @@ export const Header: React.FC<HeaderProps> = ({ revenue, carCount }) => {
         <div style={styles.tagline}>{SHOP.city} · {SHOP.phoneDisplay}</div>
       </div>
       <div style={styles.stats}>
-        <div style={styles.statChip}>
+        <div
+          style={{
+            ...styles.statChip,
+            ...(hoveredChip === 'revenue' ? styles.statChipHover : {}),
+          }}
+          onMouseEnter={() => setHoveredChip('revenue')}
+          onMouseLeave={() => setHoveredChip(null)}
+        >
           <span style={styles.statLabel}>Revenue:</span>
           <span style={styles.statValue} className="mono">
             ${revenue.toFixed(2)}
           </span>
         </div>
-        <div style={styles.statChip}>
+        <div
+          style={{
+            ...styles.statChip,
+            ...(hoveredChip === 'cars' ? styles.statChipHover : {}),
+          }}
+          onMouseEnter={() => setHoveredChip('cars')}
+          onMouseLeave={() => setHoveredChip(null)}
+        >
           <span style={styles.statLabel}>Cars:</span>
           <span style={styles.statValue}>{carCount}</span>
         </div>
@@ -38,6 +54,7 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '64px',
     background: 'var(--surface)',
     borderBottom: '1px solid var(--border)',
+    boxShadow: '0 1px 0 var(--border), 0 4px 24px rgba(17,17,27,0.5)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -74,6 +91,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
+    transition: 'border-color 0.2s, background 0.2s',
+    cursor: 'default',
+  },
+  statChipHover: {
+    borderColor: 'var(--amber)',
+    background: 'var(--accent-bg-soft)',
   },
   statLabel: {
     color: 'var(--muted)',

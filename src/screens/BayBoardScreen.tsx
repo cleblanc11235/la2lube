@@ -42,32 +42,45 @@ const BayCard: React.FC<BayCardProps> = ({ bay }) => {
   }, [bay.status, bay.startTime]);
 
   return (
-    <div className="card" style={{ ...styles.bayCard, ...statusConfig.borderStyle }}>
-      <div style={styles.bayHeader}>
-        <span style={styles.bayNumber} className="mono">BAY {bay.id}</span>
-        <span style={{ ...styles.statusBadge, ...statusConfig.badgeStyle }}>
-          {statusConfig.label}
-        </span>
+    <>
+      <style>{`
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.7); }
+        }
+      `}</style>
+      <div className="card" style={{ ...styles.bayCard, ...statusConfig.borderStyle, background: statusConfig.background }}>
+        <div style={styles.bayHeader}>
+          <span style={styles.bayNumber} className="mono">BAY {bay.id}</span>
+          <span style={{ ...styles.statusBadge, ...statusConfig.badgeStyle }}>
+            {statusConfig.label}
+          </span>
+        </div>
+
+        {bay.status === 'empty' ? (
+          <div style={styles.emptyContent}>
+            <div style={{ fontSize: '2rem', opacity: 0.2, marginBottom: '8px' }}>◻</div>
+            <div style={{ color: 'var(--muted)', fontSize: '0.875rem', letterSpacing: '0.05em' }}>AVAILABLE</div>
+          </div>
+        ) : (
+          <div style={styles.bayContent}>
+            <div style={styles.customerName}>{bay.customerName}</div>
+            <div style={styles.vehicle}>{bay.vehicle}</div>
+            <div style={styles.service}>{bay.service}</div>
+
+            {bay.status === 'inprogress' && elapsedTime && (
+              <div style={styles.timerContainer}>
+                <div style={styles.timerRow}>
+                  <span style={styles.pulseDot} />
+                  <span style={styles.timer} className="mono">{elapsedTime}</span>
+                </div>
+                <div style={styles.timerLabel}>elapsed</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {bay.status === 'empty' ? (
-        <div style={styles.emptyContent}>
-          <span style={styles.emptyText}>— Empty —</span>
-        </div>
-      ) : (
-        <div style={styles.bayContent}>
-          <div style={styles.customerName}>{bay.customerName}</div>
-          <div style={styles.vehicle}>{bay.vehicle}</div>
-          <div style={styles.service}>{bay.service}</div>
-
-          {bay.status === 'inprogress' && elapsedTime && (
-            <div style={styles.timer} className="mono">
-              {elapsedTime}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 
@@ -76,26 +89,66 @@ const getStatusConfig = (status: BayStatus) => {
     case 'inprogress':
       return {
         label: 'IN PROGRESS',
-        borderStyle: { borderTop: '4px solid var(--blue)' },
-        badgeStyle: { background: 'var(--blue)', color: 'var(--text-on-accent)' },
+        borderStyle: { borderLeft: '4px solid var(--blue)' },
+        badgeStyle: {
+          background: 'rgba(137, 180, 250, 0.15)',
+          color: 'var(--blue)',
+          borderRadius: '20px',
+          padding: '3px 10px',
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase' as const,
+        },
+        background: 'rgba(137, 180, 250, 0.06)',
       };
     case 'complete':
       return {
         label: 'COMPLETE',
-        borderStyle: { borderTop: '4px solid var(--green)' },
-        badgeStyle: { background: 'var(--green)', color: 'var(--text-on-accent)' },
+        borderStyle: { borderLeft: '4px solid var(--green)' },
+        badgeStyle: {
+          background: 'rgba(166, 227, 161, 0.15)',
+          color: 'var(--green)',
+          borderRadius: '20px',
+          padding: '3px 10px',
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase' as const,
+        },
+        background: 'rgba(166, 227, 161, 0.06)',
       };
     case 'waiting':
       return {
         label: 'WAITING',
-        borderStyle: { borderTop: '4px solid var(--orange)' },
-        badgeStyle: { background: 'var(--orange)', color: '#fff' },
+        borderStyle: { borderLeft: '4px solid var(--orange)' },
+        badgeStyle: {
+          background: 'rgba(250, 179, 135, 0.15)',
+          color: 'var(--orange)',
+          borderRadius: '20px',
+          padding: '3px 10px',
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase' as const,
+        },
+        background: 'rgba(250, 179, 135, 0.06)',
       };
     case 'empty':
       return {
         label: 'AVAILABLE',
-        borderStyle: { borderTop: '4px solid var(--muted)' },
-        badgeStyle: { background: 'var(--muted)', color: 'var(--text-on-accent)' },
+        borderStyle: { borderLeft: '4px solid var(--muted)' },
+        badgeStyle: {
+          background: 'rgba(148, 163, 184, 0.15)',
+          color: 'var(--muted)',
+          borderRadius: '20px',
+          padding: '3px 10px',
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase' as const,
+        },
+        background: 'var(--surface)',
       };
   }
 };
@@ -134,23 +187,14 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text)',
   },
   statusBadge: {
-    fontSize: '0.75rem',
-    fontWeight: 700,
-    padding: '4px 12px',
-    borderRadius: '12px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    // Styles are now in getStatusConfig for better control per status
   },
   emptyContent: {
     flex: 1,
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: '1.25rem',
-    color: 'var(--muted)',
-    fontStyle: 'italic',
   },
   bayContent: {
     display: 'flex',
@@ -170,11 +214,37 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.875rem',
     color: 'var(--muted)',
   },
+  timerContainer: {
+    marginTop: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  timerRow: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  pulseDot: {
+    display: 'inline-block',
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    background: 'var(--blue)',
+    animation: 'pulse-dot 1.2s ease-in-out infinite',
+    marginRight: 8,
+    verticalAlign: 'middle',
+  },
   timer: {
-    fontSize: '2rem',
+    fontSize: '2.5rem',
     fontWeight: 700,
     color: 'var(--blue)',
-    marginTop: '16px',
+    letterSpacing: '-0.02em',
+  },
+  timerLabel: {
+    fontSize: '0.7rem',
+    color: 'var(--muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
   },
 };
 

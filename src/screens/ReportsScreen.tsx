@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export default function ReportsScreen() {
   const { transactions, totalRevenue, carCount } = useApp();
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
   // Format today's date
   const today = new Date().toLocaleDateString('en-US', {
@@ -81,7 +82,15 @@ export default function ReportsScreen() {
               </thead>
               <tbody>
                 {transactions.map((transaction) => (
-                  <tr key={transaction.id} style={styles.row}>
+                  <tr
+                    key={transaction.id}
+                    style={{
+                      ...styles.row,
+                      ...(hoveredRowId === transaction.id ? styles.rowHover : {}),
+                    }}
+                    onMouseEnter={() => setHoveredRowId(transaction.id)}
+                    onMouseLeave={() => setHoveredRowId(null)}
+                  >
                     <td style={styles.td}>{transaction.time}</td>
                     <td style={styles.td}>{transaction.customerName}</td>
                     <td style={styles.td}>{transaction.vehicle}</td>
@@ -143,6 +152,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '20px',
     textAlign: 'center',
     minWidth: '180px',
+    boxShadow: 'var(--shadow-card)',
   },
   statLabel: {
     fontSize: '0.875rem',
@@ -208,6 +218,9 @@ const styles: Record<string, React.CSSProperties> = {
   row: {
     borderBottom: '1px solid var(--border)',
     transition: 'background-color 0.15s',
+  },
+  rowHover: {
+    background: 'rgba(205, 214, 244, 0.04)',
   },
   td: {
     padding: '16px',

@@ -26,6 +26,10 @@ export default function CheckInScreen() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [dismissedRecs, setDismissedRecs] = useState<Set<string>>(new Set());
 
+  // Hover states for cards
+  const [hoveredCustomerId, setHoveredCustomerId] = useState<string | null>(null);
+  const [hoveredVehicleId, setHoveredVehicleId] = useState<string | null>(null);
+
   // New customer form state
   const [newCustomerForm, setNewCustomerForm] = useState<TempCustomer>({
     name: '',
@@ -208,8 +212,13 @@ export default function CheckInScreen() {
             filteredCustomers.map((customer) => (
               <div
                 key={customer.id}
-                style={styles.customerCard}
+                style={{
+                  ...styles.customerCard,
+                  ...(hoveredCustomerId === customer.id ? styles.customerCardHover : {}),
+                }}
                 onClick={() => handleSelectCustomer(customer)}
+                onMouseEnter={() => setHoveredCustomerId(customer.id)}
+                onMouseLeave={() => setHoveredCustomerId(null)}
               >
                 <div style={styles.customerName}>{customer.name}</div>
                 <div style={styles.customerPhone}>{customer.phone}</div>
@@ -336,8 +345,13 @@ export default function CheckInScreen() {
           {selectedCustomer.vehicles.map((vehicle) => (
             <div
               key={vehicle.id}
-              style={styles.vehicleCard}
+              style={{
+                ...styles.vehicleCard,
+                ...(hoveredVehicleId === vehicle.id ? styles.vehicleCardHover : {}),
+              }}
               onClick={() => handleSelectVehicle(vehicle)}
+              onMouseEnter={() => setHoveredVehicleId(vehicle.id)}
+              onMouseLeave={() => setHoveredVehicleId(null)}
             >
               <div style={styles.vehicleCardMain}>
                 <span style={styles.vehicleCardTitle}>
@@ -444,7 +458,7 @@ export default function CheckInScreen() {
               .map((rec) => (
                 <div key={rec.id} style={styles.recBanner}>
                   <div style={styles.recContent}>
-                    <div style={styles.recTitle}>{rec.service}</div>
+                    <div style={styles.recTitle}>⚡ {rec.service}</div>
                     <div style={styles.recReason}>{rec.reason}</div>
                   </div>
                   <div style={styles.recActions}>
@@ -537,7 +551,12 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     padding: '24px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'transform 0.18s, box-shadow 0.18s',
+  },
+  customerCardHover: {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 28px rgba(17, 17, 27, 0.65)',
+    borderColor: '#585b70',
   },
   customerName: {
     fontSize: '24px',
@@ -609,10 +628,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     padding: '20px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'transform 0.18s, box-shadow 0.18s',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  vehicleCardHover: {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 28px rgba(17, 17, 27, 0.65)',
+    borderColor: '#585b70',
   },
   vehicleCardMain: {
     display: 'flex',
