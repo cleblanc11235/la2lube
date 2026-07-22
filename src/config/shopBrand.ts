@@ -5,7 +5,7 @@
 export const SHOP = {
   name: "LA 2 Oil & Lube",
   tagline:
-    "Honest oil changes in 15 minutes. No upsells. No appointments. No nonsense.",
+    "Honest oil changes in 15 minutes. No upsells. No appointment needed. No nonsense.",
   city: "Farmerville",
   parish: "Union Parish",
   region: "North Louisiana",
@@ -44,6 +44,11 @@ export const SHOP = {
   ],
   lagniappeClub:
     "Lagniappe Club: buy 5 oil changes, get $10 off the 6th — ask at the counter for a punch card.",
+  /** Swap this out a few times a year to keep the landing page feeling current. */
+  seasonalCallout: {
+    headline: "Louisiana summer heat is hard on your engine.",
+    body: "We check coolant level and condition and inspect your A/C system with every oil change this time of year — free, no appointment needed.",
+  },
   speedPromise: "Most oil changes in about 15 minutes",
   metaDescription:
     "Independent oil change in Farmerville, Union Parish — honest service, clear prices, no upsells. No appointment needed. Call (318) 608-5331.",

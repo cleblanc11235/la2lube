@@ -44,8 +44,10 @@
 
 .pl-topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--pl-border);
   background: rgba(24, 24, 37, 0.92);
@@ -79,6 +81,28 @@
   display: block;
   margin: 0 auto 20px;
   object-fit: contain;
+}
+
+.pl-seasonal-banner {
+  max-width: 640px;
+  margin: 0 auto 32px;
+  padding: 16px 20px;
+  background: rgba(250, 179, 135, 0.1);
+  border: 1px solid rgba(250, 179, 135, 0.35);
+  border-left: 3px solid var(--pl-gold);
+  border-radius: var(--pl-radius);
+}
+
+.pl-seasonal-banner strong {
+  color: var(--pl-gold);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.pl-seasonal-banner p {
+  margin: 0;
+  color: var(--pl-muted);
+  font-size: 0.9rem;
 }
 
 .pl-hero h1 {
@@ -122,7 +146,7 @@
   font-family: inherit;
 }
 
-.pl-btn-primary {
+.pl-btn.pl-btn-primary {
   background: var(--pl-gold);
   color: #11111b;
 }
@@ -136,7 +160,7 @@
   outline-offset: 3px;
 }
 
-.pl-btn-secondary {
+.pl-btn.pl-btn-secondary {
   background: transparent;
   color: var(--pl-text);
   border: 1px solid var(--pl-border);
@@ -267,6 +291,16 @@
   text-align: center;
   border-top: 1px solid var(--pl-border);
   scroll-margin-top: 64px;
+}
+
+.pl-map-embed {
+  width: 100%;
+  max-width: 720px;
+  height: 280px;
+  border: 1px solid var(--pl-border);
+  border-radius: var(--pl-radius);
+  margin: 0 auto 24px;
+  display: block;
 }
 
 .pl-footer-links {

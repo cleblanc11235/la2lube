@@ -124,6 +124,11 @@ export default function PublicLandingPage() {
           </div>
         </section>
 
+        <div className="pl-seasonal-banner">
+          <strong>{SHOP.seasonalCallout.headline}</strong>
+          <p>{SHOP.seasonalCallout.body}</p>
+        </div>
+
         <section className="pl-section" id="pricing">
           <h2>Oil change prices — posted upfront</h2>
           <p className="pl-section-lead">
@@ -193,6 +198,13 @@ export default function PublicLandingPage() {
       </div>
 
       <footer className="pl-footer" id="contact">
+        <iframe
+          className="pl-map-embed"
+          title={`Map to ${SHOP.name}`}
+          src={`https://www.google.com/maps?q=${encodeURIComponent(SHOP.fullAddress)}&output=embed`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
         <div className="pl-footer-links">
           {import.meta.env.DEV && (
             <>
