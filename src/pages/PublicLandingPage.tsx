@@ -78,20 +78,33 @@ export default function PublicLandingPage() {
     <div className="public-landing">
       <a href="#main-content" className="pl-skip-link">Skip to main content</a>
       <header className="pl-topbar">
-        <span className="pl-logo">{SHOP.name}</span>
+        <span className="pl-logo">
+          <img src="/LA2logo.png" alt="" className="pl-logo-mark" width={36} height={36} />
+          {SHOP.name}
+        </span>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <a className="pl-btn pl-btn-secondary" href={SHOP.phoneTel} style={{ minHeight: '44px', padding: '0 16px' }}>
             Call
           </a>
-          <Link className="pl-btn pl-btn-secondary" to="/shop" style={{ minHeight: '44px', padding: '0 16px' }}>
-            Shop app
-          </Link>
+          {import.meta.env.DEV && (
+            <Link className="pl-btn pl-btn-secondary" to="/shop" style={{ minHeight: '44px', padding: '0 16px' }}>
+              Shop app
+            </Link>
+          )}
         </div>
       </header>
 
+      <nav className="pl-subnav" aria-label="Page sections">
+        <a href="#pricing">Services</a>
+        <a href="#included">What&apos;s Included</a>
+        <a href="#trust">Why Us</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
       <div className="pl-container" id="main-content">
         <section className="pl-hero">
-          <span className="pl-badge">{SHOP.region} · Independent · Not a franchise</span>
+          <img src="/LA2logo.png" alt={SHOP.name} className="pl-hero-logo" width={180} height={180} />
           <h1>{SHOP.tagline}</h1>
           <p className="pl-hero-sub">
             {SHOP.city}, {SHOP.parish} — {SHOP.speedPromise}. {SHOP.ourPromise[0]}
@@ -158,7 +171,7 @@ export default function PublicLandingPage() {
           </p>
           <div className="pl-card">
             <p style={{ marginBottom: '16px' }}>
-              <strong>{SHOP.ownerNames}</strong> · serving {SHOP.region} for {SHOP.yearsInBusiness}+ years.
+              <strong>{SHOP.ownerNames}</strong> · {SHOP.region} — family owned and operated.
             </p>
             <p style={{ color: 'var(--pl-muted)', fontSize: '0.95rem' }}>{SHOP.ownerStory}</p>
             <ul className="pl-checklist" style={{ marginTop: '20px' }}>
@@ -167,7 +180,7 @@ export default function PublicLandingPage() {
               ))}
             </ul>
           </div>
-          <div className="pl-review-card">
+          <div className="pl-review-card" id="reviews">
             <strong style={{ color: 'var(--pl-gold)' }}>Reviews</strong>
             <p style={{ marginTop: '8px', fontSize: '0.95rem' }}>
               We&apos;re building our Google reviews — if we earned five stars today, we&apos;d love yours.
@@ -177,31 +190,17 @@ export default function PublicLandingPage() {
             </a>
           </div>
         </section>
-
-        <section className="pl-section" id="local">
-          <h2>Louisiana driving — quick tips</h2>
-          <p className="pl-section-lead">Heat and humidity work your engine harder; shorter oil life isn&apos;t hype.</p>
-          <div className="pl-card">
-            <ul className="pl-checklist">
-              <li>Check coolant before summer heat waves — we&apos;ll look during every visit.</li>
-              <li>Diesel trucks: shorter intervals when towing or idling long hours.</li>
-            </ul>
-          </div>
-        </section>
-
-        <section className="pl-section" id="loyalty">
-          <h2>Lagniappe Club</h2>
-          <div className="pl-card">
-            <p className="pl-section-lead">{SHOP.lagniappeClub}</p>
-          </div>
-        </section>
       </div>
 
-      <footer className="pl-footer">
+      <footer className="pl-footer" id="contact">
         <div className="pl-footer-links">
-          <Link to="/owner/launch">Shop owner: get found online</Link>
-          <Link to="/shop">Staff: open shop app</Link>
-          <Link to="/mvp">Shop OS MVP (demo)</Link>
+          {import.meta.env.DEV && (
+            <>
+              <Link to="/owner/launch">Shop owner: get found online</Link>
+              <Link to="/shop">Staff: open shop app</Link>
+              <Link to="/mvp">Shop OS MVP (demo)</Link>
+            </>
+          )}
           {SHOP.facebookUrl ? (
             <a href={SHOP.facebookUrl} target="_blank" rel="noreferrer">
               Facebook

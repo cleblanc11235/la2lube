@@ -60,11 +60,25 @@
   font-weight: 600;
   font-size: 1.15rem;
   color: var(--pl-gold);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pl-logo-mark {
+  border-radius: 8px;
+  object-fit: contain;
 }
 
 .pl-hero {
   padding: 48px 0 40px;
   text-align: center;
+}
+
+.pl-hero-logo {
+  display: block;
+  margin: 0 auto 20px;
+  object-fit: contain;
 }
 
 .pl-hero h1 {
@@ -147,9 +161,34 @@
   color: var(--pl-muted);
 }
 
+.pl-subnav {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--pl-border);
+  background: var(--pl-mantle);
+}
+
+.pl-subnav a {
+  color: var(--pl-muted);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pl-subnav a:hover,
+.pl-subnav a:focus-visible {
+  color: var(--pl-gold);
+}
+
 .pl-section {
   padding: 36px 0;
   border-top: 1px solid var(--pl-border);
+  scroll-margin-top: 64px;
 }
 
 .pl-section h2 {
@@ -227,6 +266,7 @@
   font-size: 0.875rem;
   text-align: center;
   border-top: 1px solid var(--pl-border);
+  scroll-margin-top: 64px;
 }
 
 .pl-footer-links {
@@ -277,6 +317,7 @@
   background: var(--pl-green);
   border-radius: var(--pl-radius);
   border: 1px solid var(--pl-green-border);
+  scroll-margin-top: 64px;
 }
 
 .pl-micro {
