@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 type PaymentMethod = 'cash' | 'card';
 
 export default function PaymentScreen() {
-  const { ticket, setScreen, addTransaction, getCustomerById, getVehicleById } = useApp();
+  const { ticket, setScreen, addTransaction, addServiceRecord, getCustomerById, getVehicleById } = useApp();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [tenderedAmount, setTenderedAmount] = useState<string>('');
@@ -46,6 +46,16 @@ export default function PaymentScreen() {
     };
 
     addTransaction(transaction);
+
+    if (ticket.customerId && ticket.vehicleId && ticket.currentMileage) {
+      addServiceRecord(ticket.customerId, ticket.vehicleId, {
+        date: new Date().toISOString(),
+        mileage: ticket.currentMileage,
+        services: ticket.selectedServices.map((s) => s.name),
+        total,
+      });
+    }
+
     setScreen('done');
   };
 

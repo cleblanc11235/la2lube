@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import type { Service } from '../types';
 
 export default function ServicesScreen() {
-  const { ticket, setTicket, setScreen, services, getCustomerById, getVehicleById } = useApp();
+  const { ticket, setTicket, setScreen, services, bays, sendTicketToBay, getCustomerById, getVehicleById } = useApp();
 
   // Hover state for service buttons
   const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
@@ -60,12 +60,8 @@ export default function ServicesScreen() {
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
 
-  // Proceed to payment
-  const handleProceedToPayment = () => {
-    if (ticket.selectedServices.length > 0) {
-      setScreen('payment');
-    }
-  };
+  const emptyBays = bays.filter((b) => b.status === 'empty');
+  const canSendToBay = ticket.selectedServices.length > 0;
 
   const hasRecommendations = ticket.recommendations && ticket.recommendations.length > 0;
 
@@ -226,17 +222,24 @@ export default function ServicesScreen() {
               </>
             )}
 
-            {/* Proceed button */}
-            <button
-              style={{
-                ...styles.proceedButton,
-                ...(ticket.selectedServices.length === 0 ? styles.proceedButtonDisabled : {}),
-              }}
-              onClick={handleProceedToPayment}
-              disabled={ticket.selectedServices.length === 0}
-            >
-              Proceed to Payment →
-            </button>
+            {/* Send to bay */}
+            {emptyBays.length === 0 ? (
+              <div style={styles.noBaysMessage}>Both bays occupied — wait for one to open up.</div>
+            ) : (
+              emptyBays.map((bay) => (
+                <button
+                  key={bay.id}
+                  style={{
+                    ...styles.proceedButton,
+                    ...(canSendToBay ? {} : styles.proceedButtonDisabled),
+                  }}
+                  onClick={() => sendTicketToBay(bay.id)}
+                  disabled={!canSendToBay}
+                >
+                  Send to Bay {bay.id} →
+                </button>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -510,6 +513,13 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.5,
     cursor: 'not-allowed',
     backgroundColor: 'var(--muted)',
+  },
+  noBaysMessage: {
+    textAlign: 'center',
+    fontSize: '14px',
+    color: 'var(--orange)',
+    padding: '16px',
+    marginTop: 'auto',
   },
   noTicketMessage: {
     display: 'flex',

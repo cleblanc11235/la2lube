@@ -2,6 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Bay, BayStatus } from '../types';
 
+const ADVANCE_LABEL: Record<BayStatus, string | null> = {
+  empty: null,
+  waiting: 'Start Job →',
+  inprogress: 'Complete & Charge →',
+};
+
 const BayBoardScreen: React.FC = () => {
   const { bays } = useApp();
 
@@ -23,8 +29,13 @@ interface BayCardProps {
 }
 
 const BayCard: React.FC<BayCardProps> = ({ bay }) => {
+  const { advanceBay, getCustomerById, getVehicleById } = useApp();
   const statusConfig = getStatusConfig(bay.status);
   const [elapsedTime, setElapsedTime] = useState('');
+
+  const customer = bay.ticket ? getCustomerById(bay.ticket.customerId) : undefined;
+  const vehicle = bay.ticket ? getVehicleById(bay.ticket.customerId, bay.ticket.vehicleId) : undefined;
+  const serviceNames = bay.ticket?.selectedServices.map((s) => s.name).join(', ');
 
   useEffect(() => {
     if (bay.status === 'inprogress' && bay.startTime) {
@@ -57,16 +68,16 @@ const BayCard: React.FC<BayCardProps> = ({ bay }) => {
           </span>
         </div>
 
-        {bay.status === 'empty' ? (
+        {bay.status === 'empty' || !customer || !vehicle ? (
           <div style={styles.emptyContent}>
             <div style={{ fontSize: '2rem', opacity: 0.2, marginBottom: '8px' }}>◻</div>
             <div style={{ color: 'var(--muted)', fontSize: '0.875rem', letterSpacing: '0.05em' }}>AVAILABLE</div>
           </div>
         ) : (
           <div style={styles.bayContent}>
-            <div style={styles.customerName}>{bay.customerName}</div>
-            <div style={styles.vehicle}>{bay.vehicle}</div>
-            <div style={styles.service}>{bay.service}</div>
+            <div style={styles.customerName}>{customer.name}</div>
+            <div style={styles.vehicle}>{vehicle.year} {vehicle.make} {vehicle.model}</div>
+            <div style={styles.service}>{serviceNames}</div>
 
             {bay.status === 'inprogress' && elapsedTime && (
               <div style={styles.timerContainer}>
@@ -77,6 +88,10 @@ const BayCard: React.FC<BayCardProps> = ({ bay }) => {
                 <div style={styles.timerLabel}>elapsed</div>
               </div>
             )}
+
+            <button style={styles.advanceButton} onClick={() => advanceBay(bay.id)}>
+              {ADVANCE_LABEL[bay.status]}
+            </button>
           </div>
         )}
       </div>
@@ -101,22 +116,6 @@ const getStatusConfig = (status: BayStatus) => {
           textTransform: 'uppercase' as const,
         },
         background: 'rgba(137, 180, 250, 0.06)',
-      };
-    case 'complete':
-      return {
-        label: 'COMPLETE',
-        borderStyle: { borderLeft: '4px solid var(--green)' },
-        badgeStyle: {
-          background: 'rgba(166, 227, 161, 0.15)',
-          color: 'var(--green)',
-          borderRadius: '20px',
-          padding: '3px 10px',
-          fontSize: '0.7rem',
-          fontWeight: 700,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase' as const,
-        },
-        background: 'rgba(166, 227, 161, 0.06)',
       };
     case 'waiting':
       return {
@@ -195,6 +194,17 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  advanceButton: {
+    marginTop: '16px',
+    height: '52px',
+    borderRadius: 'var(--radius-input, 8px)',
+    border: '1px solid var(--border)',
+    background: 'transparent',
+    color: 'var(--text)',
+    fontWeight: 700,
+    fontSize: '0.95rem',
+    cursor: 'pointer',
   },
   bayContent: {
     display: 'flex',

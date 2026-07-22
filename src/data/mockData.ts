@@ -163,27 +163,16 @@ export const mockBays: Bay[] = [
   {
     id: 1,
     status: 'inprogress',
-    customerName: 'Mike Johnson',
-    vehicle: '2021 Ford F-150',
-    service: 'Full Synthetic Oil Change',
+    ticket: {
+      customerId: 'cust-1',
+      vehicleId: 'veh-1',
+      currentMileage: 52100,
+      selectedServices: [serviceMenu.find((s) => s.id === 'oil-synthetic')!],
+    },
     startTime: Date.now() - 8 * 60 * 1000, // 8 minutes ago
   },
   {
     id: 2,
-    status: 'complete',
-    customerName: 'Sandra Lee',
-    vehicle: '2018 Chevy Silverado',
-    service: 'Synthetic Blend Oil Change',
-  },
-  {
-    id: 3,
     status: 'empty',
-  },
-  {
-    id: 4,
-    status: 'waiting',
-    customerName: 'Robert Williams',
-    vehicle: '2020 Toyota Camry',
-    service: 'Full Synthetic Oil Change',
   },
 ];

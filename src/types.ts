@@ -38,14 +38,19 @@ export interface Service {
   category: 'oilchange' | 'fluid' | 'addon';
 }
 
-export type BayStatus = 'inprogress' | 'complete' | 'empty' | 'waiting';
+export type BayStatus = 'inprogress' | 'empty' | 'waiting';
+
+export interface BayTicket {
+  customerId: string;
+  vehicleId: string;
+  currentMileage: number;
+  selectedServices: Service[];
+}
 
 export interface Bay {
   id: number;
   status: BayStatus;
-  customerName?: string;
-  vehicle?: string;
-  service?: string;
+  ticket?: BayTicket;
   startTime?: number;     // Date.now() timestamp
 }
 

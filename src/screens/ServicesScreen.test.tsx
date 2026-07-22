@@ -119,26 +119,27 @@ describe('ServicesScreen', () => {
     }
   });
 
-  test('Proceed to Payment button - disabled when no services selected', () => {
+  test('Send to Bay button - disabled when no services selected', () => {
     renderServices();
 
-    const proceedButton = screen.getByText(/proceed to payment/i);
-    expect(proceedButton).toBeDisabled();
+    // Bay 1 is occupied by mock data; Bay 2 is the only open bay
+    const sendButton = screen.getByText(/send to bay 2/i);
+    expect(sendButton).toBeDisabled();
   });
 
-  test('Proceed to Payment button - enabled after selecting at least one service', async () => {
+  test('Send to Bay button - enabled after selecting at least one service', async () => {
     const user = userEvent.setup();
     renderServices();
 
-    const proceedButton = screen.getByText(/proceed to payment/i);
-    expect(proceedButton).toBeDisabled();
+    const sendButton = screen.getByText(/send to bay 2/i);
+    expect(sendButton).toBeDisabled();
 
     // Click a service
     const serviceButton = screen.getByText('Air Filter');
     await user.click(serviceButton);
 
     // Button should now be enabled
-    expect(proceedButton).not.toBeDisabled();
+    expect(sendButton).not.toBeDisabled();
   });
 
   test('shows no ticket message when ticket is not set', () => {

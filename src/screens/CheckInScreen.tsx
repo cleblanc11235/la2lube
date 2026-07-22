@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { getRecommendations } from '../data/recommendations';
-import { mockCustomers } from '../data/mockData';
 import type { Customer, Vehicle } from '../types';
 import type { Recommendation } from '../data/recommendations';
 
@@ -16,7 +15,7 @@ interface TempCustomer {
 }
 
 export default function CheckInScreen() {
-  const { setScreen, setTicket, services, addTempCustomer } = useApp();
+  const { setScreen, setTicket, services, customers, addCustomer } = useApp();
 
   const [viewMode, setViewMode] = useState<ViewMode>('search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,10 +40,10 @@ export default function CheckInScreen() {
 
   // Search filtering
   const filteredCustomers = useMemo(() => {
-    if (!searchQuery.trim()) return mockCustomers;
+    if (!searchQuery.trim()) return customers;
 
     const query = searchQuery.toLowerCase();
-    return mockCustomers.filter((customer) => {
+    return customers.filter((customer) => {
       // Match on name
       if (customer.name.toLowerCase().includes(query)) return true;
       // Match on phone
@@ -52,7 +51,7 @@ export default function CheckInScreen() {
       // Match on any vehicle plate
       return customer.vehicles.some((v) => v.plate.toLowerCase().includes(query));
     });
-  }, [searchQuery]);
+  }, [searchQuery, customers]);
 
   // Handle customer selection
   const handleSelectCustomer = (customer: Customer) => {
@@ -168,7 +167,7 @@ export default function CheckInScreen() {
       ],
     };
 
-    addTempCustomer(tempCustomer);
+    addCustomer(tempCustomer);
     setSelectedCustomer(tempCustomer);
     setSelectedVehicle(tempCustomer.vehicles[0]);
     setViewMode('vehicle');

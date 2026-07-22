@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
-import type { AppScreen, Customer, Vehicle, Service, Bay, Transaction } from '../types';
+import type { AppScreen, Customer, Vehicle, Service, Bay, Transaction, ServiceRecord } from '../types';
 import type { Recommendation } from '../data/recommendations';
 import { mockCustomers, serviceMenu, mockBays } from '../data/mockData';
 
@@ -30,13 +30,17 @@ interface AppState {
   totalRevenue: number;
   carCount: number;
 
-  // Bays (static mock data, no mutations needed for demo)
+  // Bays
   bays: Bay[];
+  sendTicketToBay: (bayId: number) => void;
+  advanceBay: (id: number) => void;
 
-  // Lookup helpers
+  // Customers
+  customers: Customer[];
   getCustomerById: (id: string) => Customer | undefined;
   getVehicleById: (customerId: string, vehicleId: string) => Vehicle | undefined;
-  addTempCustomer: (c: Customer) => void;
+  addCustomer: (c: Customer) => void;
+  addServiceRecord: (customerId: string, vehicleId: string, record: ServiceRecord) => void;
 
   // Service menu
   services: Service[];
@@ -96,7 +100,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeScreen, setActiveScreen] = useState<AppScreen>('checkin');
   const [ticket, setTicketState] = useState<Ticket>(initialTicket);
   const [transactions, setTransactions] = useState<Transaction[]>(getInitialTransactions());
-  const [tempCustomers, setTempCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
+  const [bays, setBays] = useState<Bay[]>(mockBays);
 
   const setTicket = useCallback((partial: Partial<Ticket>) => {
     setTicketState((prev) => ({ ...prev, ...partial }));
@@ -122,14 +127,91 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const carCount = useMemo(() => transactions.length, [transactions]);
 
-  const addTempCustomer = useCallback((c: Customer) => {
-    setTempCustomers((prev) => [...prev, c]);
+  const addCustomer = useCallback((c: Customer) => {
+    setCustomers((prev) => [...prev, c]);
   }, []);
+
+  const addServiceRecord = useCallback(
+    (customerId: string, vehicleId: string, record: ServiceRecord) => {
+      setCustomers((prev) =>
+        prev.map((customer) =>
+          customer.id !== customerId
+            ? customer
+            : {
+                ...customer,
+                vehicles: customer.vehicles.map((vehicle) =>
+                  vehicle.id !== vehicleId
+                    ? vehicle
+                    : { ...vehicle, serviceHistory: [...vehicle.serviceHistory, record] }
+                ),
+              }
+        )
+      );
+    },
+    []
+  );
+
+  // Send the ticket currently being built at the counter to an open bay,
+  // then clear the counter so the next customer can be checked in.
+  const sendTicketToBay = useCallback(
+    (bayId: number) => {
+      if (!ticket.customerId || !ticket.vehicleId || !ticket.currentMileage || ticket.selectedServices.length === 0) {
+        return;
+      }
+      const bayTicket = {
+        customerId: ticket.customerId,
+        vehicleId: ticket.vehicleId,
+        currentMileage: ticket.currentMileage,
+        selectedServices: ticket.selectedServices,
+      };
+      setBays((prev) =>
+        prev.map((bay) =>
+          bay.id === bayId && bay.status === 'empty'
+            ? { ...bay, status: 'waiting', ticket: bayTicket }
+            : bay
+        )
+      );
+      setTicketState(initialTicket);
+      setActiveScreen('bayboard');
+    },
+    [ticket]
+  );
+
+  // waiting -> inprogress starts the timer. inprogress -> loads that bay's
+  // ticket into the active ticket slot and jumps straight to Payment (the
+  // car is leaving the bay while the customer pays at the counter), freeing
+  // the bay immediately.
+  const advanceBay = useCallback(
+    (id: number) => {
+      const bay = bays.find((b) => b.id === id);
+      if (!bay) return;
+
+      if (bay.status === 'waiting') {
+        setBays((prev) =>
+          prev.map((b) => (b.id === id ? { ...b, status: 'inprogress', startTime: Date.now() } : b))
+        );
+        return;
+      }
+
+      if (bay.status === 'inprogress' && bay.ticket) {
+        setTicketState({
+          customerId: bay.ticket.customerId,
+          vehicleId: bay.ticket.vehicleId,
+          currentMileage: bay.ticket.currentMileage,
+          selectedServices: bay.ticket.selectedServices,
+          recommendations: [],
+        });
+        setBays((prev) => prev.map((b) => (b.id === id ? { id: b.id, status: 'empty' } : b)));
+        setActiveScreen('payment');
+      }
+    },
+    [bays]
+  );
 
   // Lookup helpers
   const getCustomerById = useCallback((id: string): Customer | undefined => {
-    return mockCustomers.find((c) => c.id === id) ?? tempCustomers.find((c) => c.id === id);
-  }, [tempCustomers]);
+    return customers.find((c) => c.id === id);
+  }, [customers]);
 
   const getVehicleById = useCallback((customerId: string, vehicleId: string): Vehicle | undefined => {
     const customer = getCustomerById(customerId);
@@ -146,10 +228,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addTransaction,
     totalRevenue,
     carCount,
-    bays: mockBays,
+    bays,
+    sendTicketToBay,
+    advanceBay,
+    customers,
     getCustomerById,
     getVehicleById,
-    addTempCustomer,
+    addCustomer,
+    addServiceRecord,
     services: serviceMenu,
   };
 
