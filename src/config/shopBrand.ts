@@ -31,19 +31,30 @@ export const SHOP = {
   ownerStory:
     "We're not a franchise — we're a family. Barry Hayes and his family run this shop day to day, and are on-site making sure it's done right. We hire locally and treat your vehicle like we'd treat our own.",
   certifications: ["ASE-certified technicians", "Major-brand oils"],
-  oilBrands: ["Pennzoil", "Castrol", "Shell Rotella (diesel)"],
   ourPromise: [
     "No surprise charges — we confirm prices before work starts.",
     "Honest recommendations only — if you don't need it, we say so.",
     "Fast bay service — most oil changes in about 15 minutes.",
   ],
-  bundledValue: [
-    "Multi-point fluid level check & top-off (as needed)",
-    "Tire pressure check",
-    "Complimentary cold water in the waiting area",
+  pricingExplainer: [
+    "Full Service / Full Synthetic — oil, filter, and labor all included (major brands: Pennzoil, Castrol, Shell Rotella for diesel).",
+    "Bring your own oil and filter — pay labor only, no markup on parts you already bought.",
+    "Grease & Cases — chassis lube for trucks, trailers, and equipment.",
+    "Fluids & Tires — top-off and a tire check/rotation, priced separately so you only pay for what you actually need.",
   ],
+  bundledValue: ["Complimentary cold water in the waiting area", "No appointment needed"],
   lagniappeClub:
     "Lagniappe Club: buy 5 oil changes, get $10 off the 6th — ask at the counter for a punch card.",
+  pricingNote:
+    "Prices below are estimates. Actual price is determined when you check in and confirmed before any work starts.",
+  pricingEstimates: [
+    { name: "Full Service", price: "$39.99 & up" },
+    { name: "Full Synthetic", price: "$69.99 & up" },
+    { name: "Own Oil & Filter (labor only)", price: "$19.99" },
+    { name: "Own Oil & Filter w/ Fluids (labor + topping fluids)", price: "$29.99" },
+    { name: "Grease & Cases", price: "$14.99" },
+    { name: "Fluids & Tires (top-off + tire check/rotation)", price: "$9.99 – $14.99" },
+  ],
   /** Swap this out a few times a year to keep the landing page feeling current. */
   seasonalCallout: {
     headline: "Louisiana summer heat is hard on your engine.",

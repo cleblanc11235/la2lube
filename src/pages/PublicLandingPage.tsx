@@ -1,10 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SHOP } from '../config/shopBrand';
-import { serviceMenu } from '../data/mockData';
 import '../styles/publicLanding.css';
-
-const oilServices = serviceMenu.filter((s) => s.category === 'oilchange');
 
 export default function PublicLandingPage() {
   useEffect(() => {
@@ -96,7 +93,7 @@ export default function PublicLandingPage() {
 
       <nav className="pl-subnav" aria-label="Page sections">
         <a href="#pricing">Services</a>
-        <a href="#included">What&apos;s Included</a>
+        <a href="#included">How It Works</a>
         <a href="#trust">Why Us</a>
         <a href="#reviews">Reviews</a>
         <a href="#contact">Contact</a>
@@ -130,10 +127,8 @@ export default function PublicLandingPage() {
         </div>
 
         <section className="pl-section" id="pricing">
-          <h2>Oil change prices — posted upfront</h2>
-          <p className="pl-section-lead">
-            Same menu we use at the counter. Taxes may apply. We&apos;ll confirm your total before any work.
-          </p>
+          <h2>Pricing — estimates</h2>
+          <p className="pl-section-lead">{SHOP.pricingNote}</p>
           <div className="pl-card" style={{ overflowX: 'auto' }}>
             <table className="pl-pricing-table">
               <thead>
@@ -143,10 +138,10 @@ export default function PublicLandingPage() {
                 </tr>
               </thead>
               <tbody>
-                {oilServices.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.name.replace(' Oil Change', '')}</td>
-                    <td className="mono-money">${s.price.toFixed(2)}</td>
+                {SHOP.pricingEstimates.map((p) => (
+                  <tr key={p.name}>
+                    <td>{p.name}</td>
+                    <td className="mono-money">{p.price}</td>
                   </tr>
                 ))}
               </tbody>
@@ -155,14 +150,13 @@ export default function PublicLandingPage() {
         </section>
 
         <section className="pl-section" id="included">
-          <h2>What&apos;s included</h2>
-          <p className="pl-section-lead">Straightforward value — no mystery fees for the basics.</p>
+          <h2>How the pricing works</h2>
+          <p className="pl-section-lead">Pick what fits your vehicle — you only pay for what you need.</p>
           <div className="pl-card">
             <ul className="pl-checklist">
-              <li>Oil and filter per your vehicle spec (we use major brands: {SHOP.oilBrands.join(', ')}).</li>
-              <li>Under-hood inspection, fluid levels, and top-off as needed.</li>
-              <li>Tire pressure check.</li>
-              <li>Clear explanation if we see something that can wait — or can&apos;t.</li>
+              {SHOP.pricingExplainer.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
           </div>
           <p className="pl-micro">{SHOP.bundledValue.join(' · ')}</p>
