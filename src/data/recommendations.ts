@@ -1,8 +1,10 @@
+import type { Ticket } from '../types';
+
 export interface Recommendation {
   id: string;
   service: string;       // display name
-  serviceId: string;     // matches Service.id in mockData
-  reason: string;        // e.g. "32,000 miles since last service"
+  serviceId: string;     // matches Service.id in config/serviceMenu
+  reason: string;        // e.g. "32,000 miles since the last Transmission Flush (at 83,400 mi)"
   interval: number;      // miles
 }
 
@@ -35,27 +37,44 @@ const recommendationRules: RecommendationRule[] = [
   },
 ];
 
-export function getRecommendations(
-  currentMileage: number,
-  lastServiceMileage: number
-): Recommendation[] {
-  const milesSinceLastService = currentMileage - lastServiceMileage;
+/** A past visit, as far as recommendations care. */
+export type VisitRecord = Pick<Ticket, 'mileage' | 'lines'>;
+
+// Imported history may only have the service name, so match on either.
+const visitIncludes = (visit: VisitRecord, rule: RecommendationRule) =>
+  visit.lines.some((line) => line.id === rule.serviceId || line.name === rule.serviceName);
+
+/**
+ * Recommend a service when it's due: at least 85% of its interval since the
+ * last time *that service* was done here. If it has never been done here, count
+ * from the vehicle's first visit — we know it hasn't been done here since then.
+ * With no history at all there's nothing to go on, so nothing is recommended.
+ */
+export function getRecommendations(currentMileage: number, history: VisitRecord[]): Recommendation[] {
+  if (history.length === 0) return [];
+
+  const firstVisitMileage = Math.min(...history.map((v) => v.mileage));
   const recommendations: Recommendation[] = [];
 
   for (const rule of recommendationRules) {
-    const threshold = rule.interval * 0.85;
+    const done = history.filter((v) => visitIncludes(v, rule));
+    const lastDoneAt = done.length > 0 ? Math.max(...done.map((v) => v.mileage)) : null;
+    const since = currentMileage - (lastDoneAt ?? firstVisitMileage);
 
-    // Recommend if enough miles have passed since the last service
-    // Recommendations are based on mileage intervals, not previous service history
-    if (milesSinceLastService >= threshold) {
-      recommendations.push({
-        id: `rec-${rule.serviceId}`,
-        service: rule.serviceName,
-        serviceId: rule.serviceId,
-        reason: `${milesSinceLastService.toLocaleString()} miles since last service — recommended every ${rule.interval.toLocaleString()} mi`,
-        interval: rule.interval,
-      });
-    }
+    if (since < rule.interval * 0.85) continue;
+
+    const miles = since.toLocaleString();
+    const every = `recommended every ${rule.interval.toLocaleString()} mi`;
+    recommendations.push({
+      id: `rec-${rule.serviceId}`,
+      service: rule.serviceName,
+      serviceId: rule.serviceId,
+      reason:
+        lastDoneAt !== null
+          ? `${miles} miles since the last ${rule.serviceName} (at ${lastDoneAt.toLocaleString()} mi) — ${every}`
+          : `No ${rule.serviceName} on record here in ${miles} miles of visits — ${every}`,
+      interval: rule.interval,
+    });
   }
 
   return recommendations;

@@ -4,7 +4,7 @@ import PublicLandingPage from './pages/PublicLandingPage';
 
 const GbpPlaybookPage = lazy(() => import('./pages/GbpPlaybookPage'));
 const Phase5MvpPage = lazy(() => import('./pages/Phase5MvpPage'));
-const ShopApp = lazy(() => import('./ShopApp'));
+const ShopSite = lazy(() => import('./ShopSite'));
 const DemoPage = lazy(() => import('./pages/DemoPage'));
 
 export default function DevRoutes() {
@@ -15,7 +15,7 @@ export default function DevRoutes() {
         <Route path="/demo" element={<DemoPage />} />
         <Route path="/owner/launch" element={<GbpPlaybookPage />} />
         <Route path="/mvp" element={<Phase5MvpPage />} />
-        <Route path="/shop/*" element={<ShopApp />} />
+        <Route path="/shop/*" element={<ShopSite />} />
       </Routes>
     </Suspense>
   );

@@ -7,21 +7,13 @@ export type AppScreen =
   | 'reports'
   | 'guide';
 
-export interface ServiceRecord {
-  date: string;           // ISO date string
-  mileage: number;
-  services: string[];     // service names
-  total: number;
-}
-
 export interface Vehicle {
   id: string;
   year: number;
   make: string;
   model: string;
-  engine: string;         // e.g. "5.0L"
+  engine: string;         // e.g. "5.0L"; empty when unknown
   plate: string;
-  serviceHistory: ServiceRecord[];
 }
 
 export interface Customer {
@@ -36,30 +28,43 @@ export interface Service {
   name: string;
   price: number;
   category: 'oilchange' | 'fluid' | 'addon';
+  /** On the oil change line: the weight ("5W-30") and total quarts put in. */
+  oilWeight?: string;
+  quarts?: number;
 }
 
-export type BayStatus = 'inprogress' | 'empty' | 'waiting';
+export type PaymentMethod = 'cash' | 'card';
 
-export interface BayTicket {
+/**
+ * waiting     — in a bay, not started
+ * in_progress — being worked on (bay timer running)
+ * ready       — work done, bay freed, waiting on the customer to pay
+ * paid        — closed out; counts in reports and service history
+ * void        — cancelled (customer left, entered by mistake)
+ */
+export type TicketStatus = 'waiting' | 'in_progress' | 'ready' | 'paid' | 'void';
+
+/** One visit: the single record that the bay board, payment, history and reports all read. */
+export interface Ticket {
+  id: string;
+  invoiceNumber: number | null;
   customerId: string;
   vehicleId: string;
-  currentMileage: number;
-  selectedServices: Service[];
-}
-
-export interface Bay {
-  id: number;
-  status: BayStatus;
-  ticket?: BayTicket;
-  startTime?: number;     // Date.now() timestamp
-}
-
-export interface Transaction {
-  id: string;
-  time: string;           // formatted time string
+  // Snapshots, so reports still read right if the customer record changes later.
   customerName: string;
-  vehicle: string;
-  services: string[];
-  paymentMethod: 'cash' | 'card';
+  vehicleLabel: string;
+  mileage: number;
+  /** Services with the price charged at the time. */
+  lines: Service[];
+  status: TicketStatus;
+  bay: number | null;
+  paymentMethod: PaymentMethod | null;
+  subtotal: number;
+  tax: number;
+  taxRate: number;
   total: number;
+  createdAt: string;      // ISO timestamps
+  startedAt: string | null;
+  finishedAt: string | null;
+  paidAt: string | null;
 }

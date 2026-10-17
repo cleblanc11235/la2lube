@@ -1,12 +1,71 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import type { Ticket } from '../types';
+
+// <input type="date"> works in local "YYYY-MM-DD" strings.
+const toInputDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const fromInputDate = (value: string) => {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+const formatTime = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+
+function downloadCsv(day: string, tickets: Ticket[]) {
+  const quote = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const header = ['Invoice', 'Time', 'Customer', 'Vehicle', 'Mileage', 'Services', 'Method', 'Subtotal', 'Tax', 'Total'];
+  const rows = tickets.map((t) => [
+    t.invoiceNumber ?? '',
+    formatTime(t.paidAt),
+    t.customerName,
+    t.vehicleLabel,
+    t.mileage,
+    t.lines.map((l) => l.name).join('; '),
+    t.paymentMethod ?? '',
+    t.subtotal.toFixed(2),
+    t.tax.toFixed(2),
+    t.total.toFixed(2),
+  ]);
+  const csv = [header, ...rows].map((r) => r.map(quote).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `la2lube-sales-${day}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ReportsScreen() {
-  const { transactions, totalRevenue, carCount } = useApp();
+  const { todaysPaidTickets, loadPaidTickets } = useApp();
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
-  // Format today's date
-  const today = new Date().toLocaleDateString('en-US', {
+  const todayValue = toInputDate(new Date());
+  const [dayValue, setDayValue] = useState(todayValue);
+  const isToday = dayValue === todayValue;
+  // Today's tickets stay live from context; other days are fetched on demand.
+  const [pastTickets, setPastTickets] = useState<Ticket[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    if (isToday) return;
+    let cancelled = false;
+    setPastTickets(null);
+    setLoadError(false);
+    loadPaidTickets(fromInputDate(dayValue))
+      .then((list) => !cancelled && setPastTickets(list))
+      .catch(() => !cancelled && setLoadError(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [dayValue, isToday, loadPaidTickets]);
+
+  const transactions = isToday ? todaysPaidTickets : pastTickets ?? [];
+  const totalRevenue = transactions.reduce((sum, t) => sum + t.total, 0);
+  const carCount = transactions.length;
+
+  const heading = fromInputDate(dayValue).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -24,8 +83,32 @@ export default function ReportsScreen() {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>Daily Report</h1>
-        <p style={styles.date}>{today}</p>
+        <div>
+          <h1 style={styles.title}>{isToday ? 'Daily Report' : 'Report'}</h1>
+          <p style={styles.date}>{heading}</p>
+        </div>
+        <div style={styles.controls}>
+          <input
+            type="date"
+            aria-label="Report date"
+            value={dayValue}
+            max={todayValue}
+            onChange={(e) => e.target.value && setDayValue(e.target.value)}
+            style={styles.dateInput}
+          />
+          {!isToday && (
+            <button style={styles.controlButton} onClick={() => setDayValue(todayValue)}>
+              Today
+            </button>
+          )}
+          <button
+            style={styles.controlButton}
+            onClick={() => downloadCsv(dayValue, transactions)}
+            disabled={transactions.length === 0}
+          >
+            Download CSV
+          </button>
+        </div>
       </div>
 
       {/* Stat Cards Row */}
@@ -63,15 +146,24 @@ export default function ReportsScreen() {
 
       {/* Transaction Table */}
       <div className="card" style={styles.tableCard}>
-        {transactions.length === 0 ? (
+        {loadError ? (
           <div style={styles.emptyState}>
-            <p style={styles.emptyText}>No transactions yet today</p>
+            <p style={styles.emptyText}>Couldn't load that day. Check the internet connection.</p>
+          </div>
+        ) : !isToday && pastTickets === null ? (
+          <div style={styles.emptyState}>
+            <p style={styles.emptyText}>Loading…</p>
+          </div>
+        ) : transactions.length === 0 ? (
+          <div style={styles.emptyState}>
+            <p style={styles.emptyText}>{isToday ? 'No transactions yet today' : 'No transactions that day'}</p>
           </div>
         ) : (
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
               <thead>
                 <tr style={styles.headerRow}>
+                  <th style={styles.th}>Invoice</th>
                   <th style={styles.th}>Time</th>
                   <th style={styles.th}>Customer</th>
                   <th style={styles.th}>Vehicle</th>
@@ -91,10 +183,13 @@ export default function ReportsScreen() {
                     onMouseEnter={() => setHoveredRowId(transaction.id)}
                     onMouseLeave={() => setHoveredRowId(null)}
                   >
-                    <td style={styles.td}>{transaction.time}</td>
+                    <td style={styles.td} className="mono">
+                      {transaction.invoiceNumber ?? ''}
+                    </td>
+                    <td style={styles.td}>{formatTime(transaction.paidAt)}</td>
                     <td style={styles.td}>{transaction.customerName}</td>
-                    <td style={styles.td}>{transaction.vehicle}</td>
-                    <td style={styles.tdServices}>{transaction.services.join(', ')}</td>
+                    <td style={styles.td}>{transaction.vehicleLabel}</td>
+                    <td style={styles.tdServices}>{transaction.lines.map((l) => l.name).join(', ')}</td>
                     <td style={styles.td}>
                       <span
                         style={{
@@ -130,6 +225,37 @@ const styles: Record<string, React.CSSProperties> = {
   },
   header: {
     marginBottom: '24px',
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    gap: '16px',
+  },
+  controls: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  dateInput: {
+    minHeight: '48px',
+    padding: '0 12px',
+    fontSize: '16px',
+    backgroundColor: 'var(--surface)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    colorScheme: 'dark',
+  },
+  controlButton: {
+    minHeight: '48px',
+    padding: '0 20px',
+    fontSize: '15px',
+    fontWeight: 600,
+    backgroundColor: 'transparent',
+    color: 'var(--amber)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    cursor: 'pointer',
   },
   title: {
     fontSize: '2rem',

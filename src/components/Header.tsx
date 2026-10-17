@@ -4,16 +4,17 @@ import { SHOP } from '../config/shopBrand';
 interface HeaderProps {
   revenue: number;
   carCount: number;
+  onSignOut?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ revenue, carCount }) => {
+export const Header: React.FC<HeaderProps> = ({ revenue, carCount, onSignOut }) => {
   const [hoveredChip, setHoveredChip] = React.useState<'revenue' | 'cars' | null>(null);
 
   return (
-    <header style={styles.header}>
+    <header style={styles.header} className="shop-header">
       <div style={styles.left}>
         <div style={styles.logo}>{SHOP.name}</div>
-        <div style={styles.tagline}>{SHOP.city} · {SHOP.phoneDisplay}</div>
+        <div style={styles.tagline} className="shop-header-tagline">{SHOP.city} · {SHOP.phoneDisplay}</div>
       </div>
       <div style={styles.stats}>
         <div
@@ -40,6 +41,11 @@ export const Header: React.FC<HeaderProps> = ({ revenue, carCount }) => {
           <span style={styles.statLabel}>Cars:</span>
           <span style={styles.statValue}>{carCount}</span>
         </div>
+        {onSignOut && (
+          <button style={styles.signOut} onClick={onSignOut}>
+            Sign out
+          </button>
+        )}
       </div>
     </header>
   );
@@ -47,10 +53,10 @@ export const Header: React.FC<HeaderProps> = ({ revenue, carCount }) => {
 
 const styles: Record<string, React.CSSProperties> = {
   header: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
+    // In the page flow (not fixed), so content always starts below it even when
+    // it wraps to two rows on a phone.
+    position: 'relative',
+    flexShrink: 0,
     minHeight: '64px',
     background: 'var(--surface)',
     borderBottom: '1px solid var(--border)',
@@ -97,6 +103,15 @@ const styles: Record<string, React.CSSProperties> = {
   statChipHover: {
     borderColor: 'var(--amber)',
     background: 'var(--accent-bg-soft)',
+  },
+  signOut: {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--muted)',
+    fontSize: '0.8rem',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    padding: '0 4px',
   },
   statLabel: {
     color: 'var(--muted)',

@@ -1,15 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import type { Bay, BayStatus } from '../types';
+import { BAY_COUNT } from '../config/shopSettings';
+import type { Ticket } from '../types';
+
+type BayStatus = 'empty' | 'waiting' | 'inprogress';
 
 const ADVANCE_LABEL: Record<BayStatus, string | null> = {
   empty: null,
   waiting: 'Start Job →',
-  inprogress: 'Complete & Charge →',
+  inprogress: 'Job Done ✓',
 };
 
 const BayBoardScreen: React.FC = () => {
-  const { bays } = useApp();
+  const { openTickets, openForPayment } = useApp();
+
+  const bays = Array.from({ length: BAY_COUNT }, (_, i) => {
+    const id = i + 1;
+    const ticket = openTickets.find(
+      (t) => t.bay === id && (t.status === 'waiting' || t.status === 'in_progress')
+    );
+    return { id, ticket };
+  });
+  const readyToPay = openTickets.filter((t) => t.status === 'ready');
 
   return (
     <div style={styles.container}>
@@ -17,30 +29,79 @@ const BayBoardScreen: React.FC = () => {
 
       <div style={styles.grid}>
         {bays.map((bay) => (
-          <BayCard key={bay.id} bay={bay} />
+          <BayCard key={bay.id} bayId={bay.id} ticket={bay.ticket} />
         ))}
       </div>
+
+      <h2 style={styles.sectionTitle}>Ready to Pay</h2>
+      {readyToPay.length === 0 ? (
+        <p style={styles.emptyNote}>Cars show up here when the job is done.</p>
+      ) : (
+        <div style={styles.readyList}>
+          {readyToPay.map((t) => (
+            <div key={t.id} className="card" style={styles.readyCard}>
+              <div style={{ minWidth: 0 }}>
+                <div style={styles.readyName}>{t.customerName}</div>
+                <div style={styles.vehicle}>{t.vehicleLabel}</div>
+                <div style={styles.service}>{t.lines.map((s) => s.name).join(', ')}</div>
+              </div>
+              <div style={styles.readyActions}>
+                <button style={styles.payButton} onClick={() => openForPayment(t)}>
+                  Take Payment →
+                </button>
+                <CancelTicketButton ticket={t} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
+/** Customer left, or the ticket was entered by mistake. */
+const CancelTicketButton: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
+  const { voidTicket } = useApp();
+  const [busy, setBusy] = useState(false);
+
+  const handleCancel = async () => {
+    if (!window.confirm(`Cancel the ticket for ${ticket.customerName}? It won't count in reports.`)) return;
+    setBusy(true);
+    try {
+      await voidTicket(ticket.id);
+    } catch {
+      window.alert("Couldn't cancel the ticket. Check the internet connection and try again.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button style={styles.cancelButton} onClick={handleCancel} disabled={busy}>
+      Cancel ticket
+    </button>
+  );
+};
+
 interface BayCardProps {
-  bay: Bay;
+  bayId: number;
+  ticket?: Ticket;
 }
 
-const BayCard: React.FC<BayCardProps> = ({ bay }) => {
-  const { advanceBay, getCustomerById, getVehicleById } = useApp();
-  const statusConfig = getStatusConfig(bay.status);
+const BayCard: React.FC<BayCardProps> = ({ bayId, ticket }) => {
+  const { startJob, finishJob } = useApp();
+  const status: BayStatus = !ticket ? 'empty' : ticket.status === 'in_progress' ? 'inprogress' : 'waiting';
+  const statusConfig = getStatusConfig(status);
   const [elapsedTime, setElapsedTime] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const customer = bay.ticket ? getCustomerById(bay.ticket.customerId) : undefined;
-  const vehicle = bay.ticket ? getVehicleById(bay.ticket.customerId, bay.ticket.vehicleId) : undefined;
-  const serviceNames = bay.ticket?.selectedServices.map((s) => s.name).join(', ');
+  const startTime = ticket?.startedAt ? new Date(ticket.startedAt).getTime() : null;
+  const serviceNames = ticket?.lines.map((s) => s.name).join(', ');
 
   useEffect(() => {
-    if (bay.status === 'inprogress' && bay.startTime) {
+    if (status === 'inprogress' && startTime) {
       const updateTimer = () => {
-        const elapsed = Date.now() - bay.startTime!;
+        const elapsed = Math.max(0, Date.now() - startTime);
         const minutes = Math.floor(elapsed / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
         setElapsedTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
@@ -50,7 +111,20 @@ const BayCard: React.FC<BayCardProps> = ({ bay }) => {
       const interval = setInterval(updateTimer, 1000);
       return () => clearInterval(interval);
     }
-  }, [bay.status, bay.startTime]);
+  }, [status, startTime]);
+
+  const handleAdvance = async () => {
+    if (!ticket) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await (status === 'waiting' ? startJob(ticket.id) : finishJob(ticket.id));
+    } catch {
+      setError("Couldn't save. Check the internet connection and try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <>
@@ -62,24 +136,24 @@ const BayCard: React.FC<BayCardProps> = ({ bay }) => {
       `}</style>
       <div className="card" style={{ ...styles.bayCard, ...statusConfig.borderStyle, background: statusConfig.background }}>
         <div style={styles.bayHeader}>
-          <span style={styles.bayNumber} className="mono">BAY {bay.id}</span>
+          <span style={styles.bayNumber} className="mono">BAY {bayId}</span>
           <span style={{ ...styles.statusBadge, ...statusConfig.badgeStyle }}>
             {statusConfig.label}
           </span>
         </div>
 
-        {bay.status === 'empty' || !customer || !vehicle ? (
+        {!ticket ? (
           <div style={styles.emptyContent}>
             <div style={{ fontSize: '2rem', opacity: 0.2, marginBottom: '8px' }}>◻</div>
             <div style={{ color: 'var(--muted)', fontSize: '0.875rem', letterSpacing: '0.05em' }}>AVAILABLE</div>
           </div>
         ) : (
           <div style={styles.bayContent}>
-            <div style={styles.customerName}>{customer.name}</div>
-            <div style={styles.vehicle}>{vehicle.year} {vehicle.make} {vehicle.model}</div>
+            <div style={styles.customerName}>{ticket.customerName}</div>
+            <div style={styles.vehicle}>{ticket.vehicleLabel}</div>
             <div style={styles.service}>{serviceNames}</div>
 
-            {bay.status === 'inprogress' && elapsedTime && (
+            {status === 'inprogress' && elapsedTime && (
               <div style={styles.timerContainer}>
                 <div style={styles.timerRow}>
                   <span style={styles.pulseDot} />
@@ -89,9 +163,16 @@ const BayCard: React.FC<BayCardProps> = ({ bay }) => {
               </div>
             )}
 
-            <button style={styles.advanceButton} onClick={() => advanceBay(bay.id)}>
-              {ADVANCE_LABEL[bay.status]}
+            {error && (
+              <div style={styles.errorText} role="alert">
+                {error}
+              </div>
+            )}
+
+            <button style={styles.advanceButton} onClick={handleAdvance} disabled={busy}>
+              {busy ? 'Saving…' : ADVANCE_LABEL[status]}
             </button>
+            <CancelTicketButton ticket={ticket} />
           </div>
         )}
       </div>
@@ -249,6 +330,67 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: 'var(--blue)',
     letterSpacing: '-0.02em',
+  },
+  sectionTitle: {
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    color: 'var(--text)',
+    marginTop: '40px',
+    marginBottom: '16px',
+  },
+  emptyNote: {
+    color: 'var(--muted)',
+    fontSize: '0.95rem',
+  },
+  readyList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  readyCard: {
+    padding: '20px 24px',
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '16px',
+    borderLeft: '4px solid var(--green)',
+  },
+  readyName: {
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    color: 'var(--text)',
+  },
+  readyActions: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '4px',
+  },
+  payButton: {
+    minHeight: '60px',
+    padding: '0 28px',
+    fontSize: '1rem',
+    fontWeight: 700,
+    backgroundColor: 'var(--amber)',
+    color: 'var(--text-on-accent)',
+    border: 'none',
+    borderRadius: 'var(--radius-input, 8px)',
+    cursor: 'pointer',
+  },
+  cancelButton: {
+    minHeight: '40px',
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--muted)',
+    fontSize: '0.85rem',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+  },
+  errorText: {
+    marginTop: '8px',
+    fontSize: '0.875rem',
+    color: 'var(--orange)',
   },
   timerLabel: {
     fontSize: '0.7rem',

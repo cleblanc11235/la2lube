@@ -358,25 +358,6 @@
   font-size: 1rem;
 }
 
-.mvp-quick-pick {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.mvp-chip {
-  font-size: 0.8rem;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-  font-family: inherit;
-}
-
 .mvp-fieldset {
   border: 1px solid var(--border);
   border-radius: var(--radius-input);

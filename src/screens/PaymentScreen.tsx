@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
-
-type PaymentMethod = 'cash' | 'card';
+import { customerLabel, useApp, vehicleLabel } from '../context/AppContext';
+import { SHOP } from '../config/shopBrand';
+import { TAX_LABEL, TAX_RATE } from '../config/shopSettings';
+import { ticketTotals } from '../data/money';
+import type { PaymentMethod } from '../types';
 
 export default function PaymentScreen() {
-  const { ticket, setScreen, addTransaction, addServiceRecord, getCustomerById, getVehicleById } = useApp();
+  const { ticket, setScreen, completePayment, openTickets, getCustomerById, getVehicleById } = useApp();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [tenderedAmount, setTenderedAmount] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Get customer and vehicle info
   const customer = ticket.customerId ? getCustomerById(ticket.customerId) : null;
@@ -16,54 +20,40 @@ export default function PaymentScreen() {
       ? getVehicleById(ticket.customerId, ticket.vehicleId)
       : null;
 
+  const invoiceNumber = openTickets.find((t) => t.id === ticket.ticketId)?.invoiceNumber;
+
   // Calculate totals
-  const subtotal = ticket.selectedServices.reduce((sum, s) => sum + s.price, 0);
-  const taxRate = 0.085;
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  const { subtotal, tax, total } = ticketTotals(ticket.selectedServices, TAX_RATE);
 
   // Calculate change
   const tendered = parseFloat(tenderedAmount) || 0;
   const change = tendered - total;
   const canProceedCash = tendered >= total;
 
-  const handleConfirmPayment = () => {
-    if (!customer || !vehicle) return;
+  const handleConfirmPayment = async () => {
+    if (!customer || !vehicle || saving) return;
 
     if (paymentMethod === 'cash' && !canProceedCash) {
       return;
     }
 
-    // Create transaction
-    const transaction = {
-      id: crypto.randomUUID(),
-      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      customerName: customer.name,
-      vehicle: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
-      services: ticket.selectedServices.map((s) => s.name),
-      paymentMethod,
-      total,
-    };
-
-    addTransaction(transaction);
-
-    if (ticket.customerId && ticket.vehicleId && ticket.currentMileage) {
-      addServiceRecord(ticket.customerId, ticket.vehicleId, {
-        date: new Date().toISOString(),
-        mileage: ticket.currentMileage,
-        services: ticket.selectedServices.map((s) => s.name),
-        total,
-      });
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await completePayment(paymentMethod);
+    } catch {
+      setSaveError(
+        "Couldn't save the payment. Check the internet connection and tap again. Don't run the card a second time."
+      );
+      setSaving(false);
     }
-
-    setScreen('done');
   };
 
   const handleBackToServices = () => {
     setScreen('services');
   };
 
-  if (!customer || !vehicle) {
+  if (!ticket.ticketId || !customer || !vehicle) {
     return (
       <div style={styles.container}>
         <div style={styles.errorMessage}>No ticket information available</div>
@@ -85,8 +75,8 @@ export default function PaymentScreen() {
           <div style={styles.invoice}>
             {/* Header */}
             <div style={styles.invoiceHeader}>
-              <div style={styles.shopName}>LA 2 Oil &amp; Lube</div>
-              <div style={styles.shopInfo}>(318) 608-5331 | 1040 Sterlington Hwy, Farmerville, LA</div>
+              <div style={styles.shopName}>{SHOP.name}</div>
+              <div style={styles.shopInfo}>{SHOP.phoneDisplay} | {SHOP.fullAddress}</div>
             </div>
 
             <div style={styles.divider} />
@@ -95,12 +85,12 @@ export default function PaymentScreen() {
             <div style={styles.invoiceSection}>
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Customer:</span>
-                <span style={styles.infoValue}>{customer.name}</span>
+                <span style={styles.infoValue}>{customerLabel(customer)}</span>
               </div>
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Vehicle:</span>
                 <span style={styles.infoValue}>
-                  {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.engine}
+                  {vehicleLabel(vehicle)} {vehicle.engine}
                 </span>
               </div>
               <div style={styles.infoRow}>
@@ -117,6 +107,14 @@ export default function PaymentScreen() {
                 <span style={styles.infoLabel}>Date:</span>
                 <span style={styles.infoValue}>{today}</span>
               </div>
+              {invoiceNumber != null && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Invoice:</span>
+                  <span style={styles.infoValue} className="mono">
+                    #{invoiceNumber}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div style={styles.divider} />
@@ -140,7 +138,7 @@ export default function PaymentScreen() {
                 <span style={styles.totalAmount}>${subtotal.toFixed(2)}</span>
               </div>
               <div style={styles.totalRow}>
-                <span>Tax (8.5%):</span>
+                <span>Tax ({TAX_LABEL}):</span>
                 <span style={styles.totalAmount}>${tax.toFixed(2)}</span>
               </div>
               <div style={styles.divider} />
@@ -182,6 +180,12 @@ export default function PaymentScreen() {
               </button>
             </div>
 
+            {saveError && (
+              <div style={styles.saveError} role="alert">
+                {saveError}
+              </div>
+            )}
+
             {/* Payment method content */}
             <div style={styles.paymentContent}>
               {paymentMethod === 'cash' ? (
@@ -212,20 +216,27 @@ export default function PaymentScreen() {
                   <button
                     style={{
                       ...styles.confirmButton,
-                      ...(canProceedCash ? {} : styles.confirmButtonDisabled),
+                      ...(canProceedCash && !saving ? {} : styles.confirmButtonDisabled),
                     }}
                     onClick={handleConfirmPayment}
-                    disabled={!canProceedCash}
+                    disabled={!canProceedCash || saving}
                   >
-                    Confirm Payment
+                    {saving ? 'Saving…' : 'Confirm Payment'}
                   </button>
                 </>
               ) : (
                 <>
-                  <button style={styles.chargeButton} onClick={handleConfirmPayment}>
-                    Charge ${total.toFixed(2)}
+                  <div style={styles.cardSteps}>
+                    Run <strong className="mono">${total.toFixed(2)}</strong> on the Square reader first.
+                  </div>
+                  <button
+                    style={{ ...styles.chargeButton, ...(saving ? styles.confirmButtonDisabled : {}) }}
+                    onClick={handleConfirmPayment}
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving…' : `Paid on Square — $${total.toFixed(2)}`}
                   </button>
-                  <div style={styles.cardSubtitle}>Tap to process card payment</div>
+                  <div style={styles.cardSubtitle}>Tap once Square shows the payment went through</div>
                 </>
               )}
             </div>
@@ -459,6 +470,21 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'opacity 0.2s',
     marginBottom: '16px',
+  },
+  cardSteps: {
+    fontSize: '16px',
+    color: 'var(--text)',
+    textAlign: 'center',
+    marginBottom: '16px',
+  },
+  saveError: {
+    marginBottom: '16px',
+    padding: '14px 16px',
+    fontSize: '15px',
+    color: 'var(--text)',
+    border: '1px solid var(--orange)',
+    borderLeft: '4px solid var(--orange)',
+    borderRadius: '8px',
   },
   cardSubtitle: {
     textAlign: 'center',

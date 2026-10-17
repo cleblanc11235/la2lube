@@ -1,17 +1,30 @@
-# QuickLube Pro — Demo Prototype
+# LA 2 Oil & Lube — Shop App
 
 ## Goal
 
-Build a single, self-contained, demoable prototype of a modern oil change shop
-management app. This is for a non-technical shop owner in rural North Louisiana.
-It needs to look incredible and be immediately usable with zero setup.
+A modern oil change shop management app for a non-technical, family-run,
+2-bay shop in rural North Louisiana (LA 2 Oil & Lube, Farmerville).
+
+**Current phase: MVP trial.** The app runs alongside the shop's existing
+DataLube software, which stays the official record, to show its worth. Devices:
+an old Windows PC at the counter (Chrome) and a shop iPhone (plate scanning,
+bay board). Cards are run on a separate Square reader; the app only records them.
+
+## Architecture
+
+- Vite + React. One repo, two Netlify sites: the public website (default build)
+  and the staff app (`VITE_APP_TARGET=shop`), see `src/App.tsx`.
+- Data lives in Supabase (`supabase/schema.sql`), behind one shared shop login.
+  Screens only talk to the `ShopStore` interface (`src/data/store/`); tests and
+  local dev without env vars use the in-memory store ("practice mode").
+- A **ticket** is the single record of a visit (waiting → in_progress → ready →
+  paid, or void). Bay board, payment, service history and reports all read tickets.
+- Setup steps: `docs/shop-setup.md`.
 
 ## Deliverable
 
-A single Vite + React app (or single HTML file if simpler) that:
-
-- Runs in any browser with no backend, no API keys, no setup
-- Has realistic mock data pre-loaded and ready to go on first open
+- Works in Chrome on the counter PC and Safari on the iPhone
+- Starts empty: no fake customers, transactions, or bay jobs (see "Test Data" below)
 - Covers the full customer flow end to end
 - Looks premium — dark theme, clean, modern, nothing dated
 
@@ -65,11 +78,10 @@ A single Vite + React app (or single HTML file if simpler) that:
 
 ### 5. Bay Board
 
-- 4 bays displayed as color-coded cards
-- Bay 1: In Progress (blue, live ticking timer)
-- Bay 2: Complete (green)
-- Bay 3: Empty (gray)
-- Bay 4: Waiting (orange)
+- One color-coded card per bay (`BAY_COUNT` in `src/config/shopSettings.ts`, 2 today)
+- Waiting (orange) → Start Job → In Progress (blue, live ticking timer) → Job Done
+- Finished cars move to a "Ready to Pay" list → Take Payment
+- Any open ticket can be cancelled (voided)
 - Each occupied bay shows vehicle, customer name, service
 
 ### 6. Daily Reports
@@ -93,9 +105,13 @@ A single Vite + React app (or single HTML file if simpler) that:
 - Minimum touch target height: 60px
 - All money values: monospace, right-aligned
 
-## Mock Data (pre-load this)
+## Test Data (tests only — never pre-load into the app)
 
-4 customers, Louisiana names, realistic vehicles:
+The app is moving to real use in the shop, so it ships with no seed data.
+The shop's real configuration lives in `src/config/` (`serviceMenu.ts`,
+`shopSettings.ts` for tax rate and bay count, `shopBrand.ts`). The customers
+below are fixtures in `src/test/fixtures.ts`; tests pass them in with
+`<AppProvider initialCustomers={testCustomers}>`.
 
 - Mike Johnson | (318) 555-1234 | 2021 Ford F-150 5.0L | LSU 4477
   History: Full Synthetic x3, last at 48,200 mi
@@ -121,7 +137,9 @@ Tire Rotation $19.99, Interior Vac $14.99, Battery Test FREE, Fluid Top-Off FREE
 
 ## Recommendation Engine
 
-Show amber banner if: (current mileage - last service mileage) >= (interval x 0.85)
+Show amber banner if: (current mileage - mileage when *that service* was last done)
+>= (interval x 0.85). If it has never been done here, measure from the vehicle's
+first visit on record. No history at all → no recommendations.
 
 - Transmission Flush: every 30,000 mi
 - Coolant Flush: every 30,000 mi
@@ -129,17 +147,17 @@ Show amber banner if: (current mileage - last service mileage) >= (interval x 0.
 - Air Filter: every 15,000 mi
   Include one-tap "Add to Ticket" button on each banner.
 
-## Do NOT Build
+## Do NOT Build (yet)
 
-- Any backend or database
-- Real payment processing
+- A custom backend server (Supabase is the backend)
+- Real payment processing (record what was run on Square)
 - Real printer integration
 - Multi-location anything
 - Inventory management
 - Employee management
 - Online booking
 - Settings screen
-- Authentication/login
+- Per-employee logins (one shared shop login for now)
 
 ## Definition of Done
 

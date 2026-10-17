@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { mockCustomers, serviceMenu } from '../data/mockData';
+import { serviceMenu } from '../config/serviceMenu';
 import type { Service } from '../types';
 import {
   aggregateCategory,
@@ -23,49 +23,6 @@ function nextInvoiceNum(existing: MvpTicket[]): number {
   return max + 1;
 }
 
-function seedTickets(): MvpTicket[] {
-  const now = Date.now();
-  const oil = (id: string) => serviceMenu.find((s) => s.id === id)!;
-  return [
-    {
-      id: 'seed-1',
-      invoiceNum: 1001,
-      createdAt: now - 3 * 60 * 60 * 1000,
-      customerName: 'James Martin',
-      vehicleLabel: 'HND 2211 — 2019 Honda Accord',
-      lines: [{ ...lineFromService(oil('oil-synthetic')) }],
-      discount: 0,
-      payment: 'card',
-    },
-    {
-      id: 'seed-2',
-      invoiceNum: 1002,
-      createdAt: now - 2.5 * 60 * 60 * 1000,
-      customerName: 'Mary Thompson',
-      vehicleLabel: 'RAV 8844 — 2022 Toyota RAV4',
-      lines: [
-        { ...lineFromService(oil('oil-blend')) },
-        { ...lineFromService(oil('addon-cabin')) },
-      ],
-      discount: 5,
-      payment: 'cash',
-    },
-    {
-      id: 'seed-3',
-      invoiceNum: 1003,
-      createdAt: now - 1.2 * 60 * 60 * 1000,
-      customerName: 'David Brown',
-      vehicleLabel: 'ESC 9901 — 2017 Ford Escape',
-      lines: [
-        { ...lineFromService(oil('oil-highmileage')) },
-        { ...lineFromService(oil('addon-air')) },
-      ],
-      discount: 0,
-      payment: 'fleet',
-    },
-  ];
-}
-
 function lineFromService(s: Service): TicketLine {
   return {
     serviceId: s.id,
@@ -80,12 +37,12 @@ function loadTickets(): MvpTicket[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as MvpTicket[];
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch {
     /* ignore */
   }
-  return seedTickets();
+  return [];
 }
 
 function saveTickets(t: MvpTicket[]) {
@@ -158,15 +115,10 @@ export default function Phase5MvpPage() {
   };
 
   const clearDay = () => {
-    if (confirm('Clear all tickets for this demo?')) {
+    if (confirm('Clear all tickets?')) {
       setTickets([]);
       localStorage.removeItem(STORAGE_KEY);
     }
-  };
-
-  const fillFromCustomer = (name: string, vehicle: string) => {
-    setCustomerName(name);
-    setVehicleLabel(vehicle);
   };
 
   return (
@@ -245,7 +197,7 @@ export default function Phase5MvpPage() {
               </tbody>
             </table>
           </div>
-          {tickets.length === 0 && <p className="mvp-empty">No tickets yet — add one or reset seed data.</p>}
+          {tickets.length === 0 && <p className="mvp-empty">No tickets yet — add one to get started.</p>}
           <div className="mvp-log-footer">
             <span>
               Total sales (incl. tax): <strong className="mono">${totals.sales.toFixed(2)}</strong>
@@ -359,24 +311,6 @@ export default function Phase5MvpPage() {
                 placeholder="Name"
               />
             </label>
-
-            <div className="mvp-quick-pick">
-              <span className="muted small">Quick fill from mock list:</span>
-              {mockCustomers.slice(0, 3).map((c) => {
-                const v = c.vehicles[0];
-                const label = `${v.plate} — ${v.year} ${v.make} ${v.model}`;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className="mvp-chip"
-                    onClick={() => fillFromCustomer(c.name, label)}
-                  >
-                    {c.name}
-                  </button>
-                );
-              })}
-            </div>
 
             <label className="mvp-label">
               Vehicle

@@ -165,3 +165,42 @@ body {
     width: 100% !important;
   }
 }
+
+/* Plate scanner "reading..." spinner */
+.scan-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--border);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: scan-spin 0.8s linear infinite;
+}
+
+@keyframes scan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Done screen: "Print Sticker" prints only the sticker */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-sticker,
+  .print-sticker * {
+    visibility: visible;
+  }
+  .print-sticker {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+/* Shop header on a phone: drop the tagline so the stats fit */
+@media (max-width: 600px) {
+  .shop-header-tagline {
+    display: none;
+  }
+}

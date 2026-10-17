@@ -1,12 +1,35 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
+import { customerLabel, useApp, vehicleLabel } from '../context/AppContext';
 import type { Service } from '../types';
+import { BAY_COUNT, TAX_LABEL, TAX_RATE } from '../config/shopSettings';
+import { ticketTotals } from '../data/money';
+import { INCLUDED_QUARTS, oilChangeLines, oilTypes, type OilType } from '../config/serviceMenu';
+
+const MAX_QUARTS = 20;
+
+const ALL_BAYS = Array.from({ length: BAY_COUNT }, (_, i) => i + 1);
 
 export default function ServicesScreen() {
-  const { ticket, setTicket, setScreen, services, bays, sendTicketToBay, getCustomerById, getVehicleById } = useApp();
+  const {
+    ticket,
+    setTicket,
+    setScreen,
+    services,
+    openTickets,
+    sendTicketToBay,
+    saveTicketLines,
+    getCustomerById,
+    getVehicleById,
+  } = useApp();
 
   // Hover state for service buttons
   const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Editing a ticket that's already saved (reached from Payment to add something
+  // found during the job), rather than building a new one at check-in.
+  const editingSavedTicket = ticket.ticketId !== null;
 
   // Get customer and vehicle info
   const customer = ticket.customerId ? getCustomerById(ticket.customerId) : null;
@@ -15,8 +38,49 @@ export default function ServicesScreen() {
       ? getVehicleById(ticket.customerId, ticket.vehicleId)
       : null;
 
+  const [otherName, setOtherName] = useState('');
+  const [otherPrice, setOtherPrice] = useState('');
+
+  // The oil change is the 'oilchange' line that isn't the extra-quarts line.
+  const oilLine = ticket.selectedServices.find((s) => s.category === 'oilchange' && !s.id.endsWith('-extra'));
+  const selectedOil = oilLine ? oilTypes.find((t) => t.id === oilLine.id) : undefined;
+  const selectedWeight = oilLine?.oilWeight;
+  const quarts = oilLine?.quarts ?? INCLUDED_QUARTS;
+
+  /** Replace the oil change lines, keeping everything else on the ticket. */
+  const setOil = (oil: OilType | undefined, weight?: string, qts = INCLUDED_QUARTS) => {
+    const others = ticket.selectedServices.filter((s) => s.category !== 'oilchange');
+    setTicket({ selectedServices: oil ? [...oilChangeLines(oil, weight, qts), ...others] : others });
+  };
+
+  const pickOil = (oil: OilType) => {
+    if (selectedOil?.id === oil.id) {
+      setOil(undefined);
+      return;
+    }
+    // Switching oil keeps the weight if the new oil comes in it, and the quart count.
+    const weight = oil.grades.some((g) => g.weight === selectedWeight) ? selectedWeight : undefined;
+    setOil(oil, weight, quarts);
+  };
+
+  const otherPriceValue = Number(otherPrice);
+  const canAddOther = otherName.trim() !== '' && otherPrice.trim() !== '' && otherPriceValue >= 0;
+
+  const addOther = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canAddOther) return;
+    const item: Service = {
+      id: `custom-${Date.now()}`,
+      name: otherName.trim(),
+      price: Math.round(otherPriceValue * 100) / 100,
+      category: 'addon',
+    };
+    setTicket({ selectedServices: [...ticket.selectedServices, item] });
+    setOtherName('');
+    setOtherPrice('');
+  };
+
   // Group services by category
-  const oilChangeServices = services.filter((s) => s.category === 'oilchange');
   const fluidServices = services.filter((s) => s.category === 'fluid');
   const addonServices = services.filter((s) => s.category === 'addon');
 
@@ -34,15 +98,7 @@ export default function ServicesScreen() {
       // Remove the service
       updatedServices = ticket.selectedServices.filter((s) => s.id !== service.id);
     } else {
-      // For oil change category, only one can be selected at a time
-      if (service.category === 'oilchange') {
-        // Remove any existing oil change service
-        const withoutOilChange = ticket.selectedServices.filter((s) => s.category !== 'oilchange');
-        updatedServices = [...withoutOilChange, service];
-      } else {
-        // For other categories, just add it
-        updatedServices = [...ticket.selectedServices, service];
-      }
+      updatedServices = [...ticket.selectedServices, service];
     }
 
     setTicket({ selectedServices: updatedServices });
@@ -50,18 +106,44 @@ export default function ServicesScreen() {
 
   // Remove service from order summary
   const removeService = (serviceId: string) => {
+    if (selectedOil && serviceId === selectedOil.id) {
+      setOil(undefined);
+      return;
+    }
+    if (selectedOil && serviceId === `${selectedOil.id}-extra`) {
+      setOil(selectedOil, selectedWeight, INCLUDED_QUARTS);
+      return;
+    }
     const updatedServices = ticket.selectedServices.filter((s) => s.id !== serviceId);
     setTicket({ selectedServices: updatedServices });
   };
 
   // Calculate totals
-  const subtotal = ticket.selectedServices.reduce((sum, s) => sum + s.price, 0);
-  const taxRate = 0.085;
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  const { subtotal, tax, total } = ticketTotals(ticket.selectedServices, TAX_RATE);
 
-  const emptyBays = bays.filter((b) => b.status === 'empty');
-  const canSendToBay = ticket.selectedServices.length > 0;
+  const takenBays = new Set(
+    openTickets.filter((t) => t.status === 'waiting' || t.status === 'in_progress').map((t) => t.bay)
+  );
+  const emptyBays = ALL_BAYS.filter((bay) => !takenBays.has(bay));
+  const canSendToBay = ticket.selectedServices.length > 0 && !saving;
+
+  const run = async (action: () => Promise<void>, failMessage: string) => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await action();
+    } catch (e) {
+      setSaveError(e instanceof Error && e.name === 'BayTakenError' ? e.message : failMessage);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendToBay = (bay: number) =>
+    run(() => sendTicketToBay(bay), "Couldn't save the ticket. Check the internet connection and try again.");
+
+  const handleSaveChanges = () =>
+    run(saveTicketLines, "Couldn't save the changes. Check the internet connection and try again.");
 
   const hasRecommendations = ticket.recommendations && ticket.recommendations.length > 0;
 
@@ -104,54 +186,141 @@ export default function ServicesScreen() {
           <div style={styles.section}>
             <h2 style={styles.sectionHeader}>OIL CHANGE</h2>
             <div style={styles.serviceGrid}>
-              {oilChangeServices.map((service) => (
-                <ServiceButton
-                  key={service.id}
-                  service={service}
-                  isSelected={isServiceSelected(service.id)}
-                  isHovered={hoveredServiceId === service.id}
-                  onClick={() => toggleService(service)}
-                  onMouseEnter={() => setHoveredServiceId(service.id)}
-                  onMouseLeave={() => setHoveredServiceId(null)}
-                />
-              ))}
+              {oilTypes.map((oil) => {
+                const isSelected = selectedOil?.id === oil.id;
+                return (
+                  <button
+                    key={oil.id}
+                    style={{ ...styles.serviceButton, ...(isSelected ? styles.serviceButtonSelected : {}) }}
+                    onClick={() => pickOil(oil)}
+                    aria-pressed={isSelected}
+                  >
+                    <div style={isSelected ? styles.serviceNameSelected : styles.serviceName}>{oil.name}</div>
+                    <div style={styles.servicePrice}>
+                      {INCLUDED_QUARTS} qt ${oil.basePrice.toFixed(2)} · +${oil.extraQuartPrice.toFixed(2)}/qt
+                    </div>
+                    <div style={styles.codeTag}>DataLube {oil.code}</div>
+                  </button>
+                );
+              })}
             </div>
+
+            {selectedOil && (
+              <>
+                <h3 style={styles.subHeader}>WEIGHT</h3>
+                <div style={styles.gradeGrid}>
+                  {selectedOil.grades.map((g) => {
+                    const isSelected = selectedWeight === g.weight;
+                    return (
+                      <button
+                        key={g.weight}
+                        style={{ ...styles.gradeButton, ...(isSelected ? styles.serviceButtonSelected : {}) }}
+                        onClick={() => setOil(selectedOil, isSelected ? undefined : g.weight, quarts)}
+                        aria-pressed={isSelected}
+                      >
+                        <div style={isSelected ? styles.serviceNameSelected : styles.serviceName}>{g.weight}</div>
+                        <div style={styles.codeTag}>{g.code}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <h3 style={styles.subHeader}>QUARTS</h3>
+                <div style={styles.quartRow}>
+                  <button
+                    style={styles.stepButton}
+                    onClick={() => setOil(selectedOil, selectedWeight, quarts - 1)}
+                    disabled={quarts <= INCLUDED_QUARTS}
+                    aria-label="One less quart"
+                  >
+                    −
+                  </button>
+                  <div style={styles.quartCount} aria-label="Quarts">
+                    {quarts} qt
+                  </div>
+                  <button
+                    style={styles.stepButton}
+                    onClick={() => setOil(selectedOil, selectedWeight, quarts + 1)}
+                    disabled={quarts >= MAX_QUARTS}
+                    aria-label="One more quart"
+                  >
+                    +
+                  </button>
+                  <div style={styles.quartNote}>
+                    {quarts > INCLUDED_QUARTS
+                      ? `${quarts - INCLUDED_QUARTS} extra × $${selectedOil.extraQuartPrice.toFixed(2)} (${selectedOil.extraQuartCode})`
+                      : `${INCLUDED_QUARTS} qt included`}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Fluid Services section */}
-          <div style={styles.section}>
-            <h2 style={styles.sectionHeader}>FLUID SERVICES</h2>
-            <div style={styles.serviceGrid}>
-              {fluidServices.map((service) => (
-                <ServiceButton
-                  key={service.id}
-                  service={service}
-                  isSelected={isServiceSelected(service.id)}
-                  isHovered={hoveredServiceId === service.id}
-                  onClick={() => toggleService(service)}
-                  onMouseEnter={() => setHoveredServiceId(service.id)}
-                  onMouseLeave={() => setHoveredServiceId(null)}
-                />
-              ))}
+          {fluidServices.length > 0 && (
+            <div style={styles.section}>
+              <h2 style={styles.sectionHeader}>FLUID SERVICES</h2>
+              <div style={styles.serviceGrid}>
+                {fluidServices.map((service) => (
+                  <ServiceButton
+                    key={service.id}
+                    service={service}
+                    isSelected={isServiceSelected(service.id)}
+                    isHovered={hoveredServiceId === service.id}
+                    onClick={() => toggleService(service)}
+                    onMouseEnter={() => setHoveredServiceId(service.id)}
+                    onMouseLeave={() => setHoveredServiceId(null)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Filters & Add-ons section */}
-          <div style={styles.section}>
-            <h2 style={styles.sectionHeader}>FILTERS & ADD-ONS</h2>
-            <div style={styles.serviceGrid}>
-              {addonServices.map((service) => (
-                <ServiceButton
-                  key={service.id}
-                  service={service}
-                  isSelected={isServiceSelected(service.id)}
-                  isHovered={hoveredServiceId === service.id}
-                  onClick={() => toggleService(service)}
-                  onMouseEnter={() => setHoveredServiceId(service.id)}
-                  onMouseLeave={() => setHoveredServiceId(null)}
-                />
-              ))}
+          {addonServices.length > 0 && (
+            <div style={styles.section}>
+              <h2 style={styles.sectionHeader}>FILTERS & ADD-ONS</h2>
+              <div style={styles.serviceGrid}>
+                {addonServices.map((service) => (
+                  <ServiceButton
+                    key={service.id}
+                    service={service}
+                    isSelected={isServiceSelected(service.id)}
+                    isHovered={hoveredServiceId === service.id}
+                    onClick={() => toggleService(service)}
+                    onMouseEnter={() => setHoveredServiceId(service.id)}
+                    onMouseLeave={() => setHoveredServiceId(null)}
+                  />
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* Anything not on the menu */}
+          <div style={styles.section}>
+            <h2 style={styles.sectionHeader}>OTHER ITEM</h2>
+            <form style={styles.otherForm} onSubmit={addOther}>
+              <input
+                style={{ ...styles.otherInput, flex: 2 }}
+                placeholder="What is it? (e.g. Wiper blades)"
+                aria-label="Other item description"
+                value={otherName}
+                onChange={(e) => setOtherName(e.target.value)}
+              />
+              <input
+                style={{ ...styles.otherInput, flex: 1, fontFamily: styles.servicePrice.fontFamily, textAlign: 'right' }}
+                placeholder="$0.00"
+                aria-label="Other item price"
+                inputMode="decimal"
+                value={otherPrice}
+                onChange={(e) => setOtherPrice(e.target.value.replace(/[^0-9.]/g, ''))}
+              />
+              <button
+                type="submit"
+                style={{ ...styles.addOtherButton, ...(canAddOther ? {} : styles.proceedButtonDisabled) }}
+                disabled={!canAddOther}
+              >
+                Add
+              </button>
+            </form>
           </div>
         </div>
 
@@ -163,9 +332,9 @@ export default function ServicesScreen() {
             {/* Customer and vehicle info */}
             {customer && vehicle && (
               <div style={styles.customerInfo}>
-                <div style={styles.customerName}>{customer.name}</div>
+                <div style={styles.customerName}>{customerLabel(customer)}</div>
                 <div style={styles.vehicleInfo}>
-                  {vehicle.year} {vehicle.make} {vehicle.model}
+                  {vehicleLabel(vehicle)}
                 </div>
                 {ticket.currentMileage && (
                   <div style={styles.mileageInfo}>
@@ -210,7 +379,7 @@ export default function ServicesScreen() {
                     <span style={styles.totalAmount}>${subtotal.toFixed(2)}</span>
                   </div>
                   <div style={styles.totalRow}>
-                    <span>Tax (8.5%):</span>
+                    <span>Tax ({TAX_LABEL}):</span>
                     <span style={styles.totalAmount}>${tax.toFixed(2)}</span>
                   </div>
                   <div style={styles.divider} />
@@ -222,21 +391,37 @@ export default function ServicesScreen() {
               </>
             )}
 
-            {/* Send to bay */}
-            {emptyBays.length === 0 ? (
-              <div style={styles.noBaysMessage}>Both bays occupied — wait for one to open up.</div>
+            {saveError && (
+              <div style={styles.noBaysMessage} role="alert">
+                {saveError}
+              </div>
+            )}
+
+            {editingSavedTicket ? (
+              <button
+                style={{
+                  ...styles.proceedButton,
+                  ...(canSendToBay ? {} : styles.proceedButtonDisabled),
+                }}
+                onClick={handleSaveChanges}
+                disabled={!canSendToBay}
+              >
+                {saving ? 'Saving…' : 'Save Changes → Payment'}
+              </button>
+            ) : emptyBays.length === 0 ? (
+              <div style={styles.noBaysMessage}>All bays are full — wait for one to open up.</div>
             ) : (
               emptyBays.map((bay) => (
                 <button
-                  key={bay.id}
+                  key={bay}
                   style={{
                     ...styles.proceedButton,
                     ...(canSendToBay ? {} : styles.proceedButtonDisabled),
                   }}
-                  onClick={() => sendTicketToBay(bay.id)}
+                  onClick={() => handleSendToBay(bay)}
                   disabled={!canSendToBay}
                 >
-                  Send to Bay {bay.id} →
+                  Send to Bay {bay} →
                 </button>
               ))
             )}
@@ -356,6 +541,91 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: 'var(--accent-bg-strong)',
     borderColor: 'var(--amber)',
     boxShadow: '0 0 16px var(--accent-glow), 0 2px 8px rgba(17, 17, 27, 0.4)',
+  },
+  codeTag: {
+    fontSize: '12px',
+    color: 'var(--muted)',
+    letterSpacing: '0.04em',
+  },
+  subHeader: {
+    fontSize: '13px',
+    fontWeight: 600,
+    letterSpacing: '0.1em',
+    color: 'var(--muted)',
+    margin: '24px 0 12px',
+  },
+  gradeGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+    gap: '10px',
+  },
+  gradeButton: {
+    backgroundColor: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    padding: '10px',
+    minHeight: '64px',
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+  },
+  quartRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+  },
+  stepButton: {
+    width: '64px',
+    height: '64px',
+    fontSize: '28px',
+    fontWeight: 600,
+    backgroundColor: 'var(--surface)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+  },
+  quartCount: {
+    minWidth: '80px',
+    textAlign: 'center',
+    fontSize: '24px',
+    fontWeight: 700,
+    fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+    color: 'var(--text)',
+  },
+  quartNote: {
+    fontSize: '14px',
+    color: 'var(--muted)',
+  },
+  otherForm: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+  },
+  otherInput: {
+    minWidth: '120px',
+    minHeight: '60px',
+    padding: '0 14px',
+    fontSize: '16px',
+    backgroundColor: 'var(--surface)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+  },
+  addOtherButton: {
+    minHeight: '60px',
+    padding: '0 28px',
+    fontSize: '16px',
+    fontWeight: 600,
+    backgroundColor: 'var(--amber)',
+    color: 'var(--text-on-accent)',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
   },
   serviceName: {
     fontSize: '16px',

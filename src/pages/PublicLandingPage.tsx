@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SHOP } from '../config/shopBrand';
-import { serviceMenu } from '../data/mockData';
+import { serviceMenu } from '../config/serviceMenu';
 import '../styles/publicLanding.css';
 
 const oilServices = serviceMenu.filter((s) => s.category === 'oilchange');
